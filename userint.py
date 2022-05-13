@@ -81,8 +81,10 @@ class UserInterface:
 
     def command_interface(self):
         """Read the command entered and call the corresponding function."""
-        print("Logic Simulator: interactive command line user interface.\n"
-              "Enter 'h' for help.")
+        print(
+            "Logic Simulator: interactive command line user interface.\n"
+            "Enter 'h' for help."
+        )
         self.get_line()  # get the user entry
         command = self.read_command()  # read the first character
         while command != "q":
@@ -226,8 +228,9 @@ class UserInterface:
         monitor = self.read_signal_name()
         if monitor is not None:
             [device, port] = monitor
-            monitor_error = self.monitors.make_monitor(device, port,
-                                                       self.cycles_completed)
+            monitor_error = self.monitors.make_monitor(
+                device, port, self.cycles_completed
+            )
             if monitor_error == self.monitors.NO_ERROR:
                 print("Successfully made monitor.")
             else:
@@ -277,5 +280,14 @@ class UserInterface:
                 print("Error! Nothing to continue. Run first.")
             elif self.run_network(cycles):
                 self.cycles_completed += cycles
-                print(" ".join(["Continuing for", str(cycles), "cycles.",
-                                "Total:", str(self.cycles_completed)]))
+                print(
+                    " ".join(
+                        [
+                            "Continuing for",
+                            str(cycles),
+                            "cycles.",
+                            "Total:",
+                            str(self.cycles_completed),
+                        ]
+                    )
+                )
