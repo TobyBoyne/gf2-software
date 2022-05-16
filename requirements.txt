@@ -1,2 +1,7 @@
+wxpython
+
 pytest
+pydocstyle
+pycodestyle
+
 pre-commit
