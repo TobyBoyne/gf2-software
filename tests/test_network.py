@@ -37,9 +37,7 @@ def test_get_connected_output(network_with_devices):
     devices = network.devices
     names = devices.names
 
-    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(
-        ["Sw1", "Sw2", "Or1", "I1", "I2"]
-    )
+    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(["Sw1", "Sw2", "Or1", "I1", "I2"])
     # Inputs are unconnected, get_connected_output should return None
     assert network.get_connected_output(OR1_ID, I1) is None
     assert network.get_connected_output(OR1_ID, I2) is None
@@ -61,9 +59,7 @@ def test_get_input_signal(network_with_devices):
     devices = network.devices
     names = devices.names
 
-    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(
-        ["Sw1", "Sw2", "Or1", "I1", "I2"]
-    )
+    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(["Sw1", "Sw2", "Or1", "I1", "I2"])
     # Inputs are unconnected, get_input_signal should return None
     assert network.get_input_signal(OR1_ID, I1) is None
     assert network.get_input_signal(OR1_ID, I2) is None
@@ -103,9 +99,7 @@ def test_check_network(network_with_devices):
     devices = network.devices
     names = devices.names
 
-    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(
-        ["Sw1", "Sw2", "Or1", "I1", "I2"]
-    )
+    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(["Sw1", "Sw2", "Or1", "I1", "I2"])
 
     # Inputs are unconnected, check_network() should return False
     assert not network.check_network()
@@ -124,9 +118,7 @@ def test_make_connection(network_with_devices):
     devices = network.devices
     names = devices.names
 
-    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(
-        ["Sw1", "Sw2", "Or1", "I1", "I2"]
-    )
+    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(["Sw1", "Sw2", "Or1", "I1", "I2"])
 
     or1 = devices.get_device(OR1_ID)
 
@@ -158,17 +150,13 @@ def test_make_connection(network_with_devices):
         ("(SW1_ID, None, OR1_ID, I1)", "network.INPUT_CONNECTED"),
     ],
 )
-def test_make_connection_gives_error(
-    network_with_devices, function_args, error
-):
+def test_make_connection_gives_error(network_with_devices, function_args, error):
     """Test if the make_connection function returns the correct errors."""
     network = network_with_devices
     devices = network.devices
     names = devices.names
 
-    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(
-        ["Sw1", "Sw2", "Or1", "I1", "I2"]
-    )
+    [SW1_ID, SW2_ID, OR1_ID, I1, I2] = names.lookup(["Sw1", "Sw2", "Or1", "I1", "I2"])
 
     # Connect Or1.I1 to Sw1
     network.make_connection(SW1_ID, None, OR1_ID, I1)
@@ -185,9 +173,7 @@ def test_execute_xor(new_network):
     devices = network.devices
     names = devices.names
 
-    [SW1_ID, SW2_ID, XOR1_ID, I1, I2] = names.lookup(
-        ["Sw1", "Sw2", "Xor1", "I1", "I2"]
-    )
+    [SW1_ID, SW2_ID, XOR1_ID, I1, I2] = names.lookup(["Sw1", "Sw2", "Xor1", "I1", "I2"])
 
     # Make devices
     devices.make_device(XOR1_ID, devices.XOR)

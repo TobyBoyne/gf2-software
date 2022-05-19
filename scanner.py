@@ -11,8 +11,8 @@ Symbol - encapsulates a symbol and stores its properties.
 
 
 from lib2to3.pgen2.token import NUMBER
-from typing import Union, TYPE_CHECKING
 from os import PathLike
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from names import Names
@@ -65,21 +65,28 @@ class Scanner:
                       and returns the symbol.
     """
 
-    SYMBOL_TYPES_LIST = [COMMA, SEMICOLON, COLON, KEYWORD, NUMBER,
-        NAME, ARROW, EOF] = range(8)
+    SYMBOL_TYPES_LIST = [
+        COMMA,
+        SEMICOLON,
+        COLON,
+        KEYWORD,
+        NUMBER,
+        NAME,
+        ARROW,
+        EOF,
+    ] = range(8)
 
     KEYWORDS_LIST = ["DEVICES", "CONNECT", "MONITOR"]
-    
-    def __init__(self, path: Union[str, PathLike], names: Names):
+
+    def __init__(self, path: Union[str, PathLike], names: "Names"):
         """Open specified file and initialise reserved words and IDs."""
 
         self.names = names
         self.file = open(path, "r")
 
-        [self.DEVICES_ID, self.CONNECT_ID, 
-            self.MONITOR_ID] = self.names.lookup(Scanner.KEYWORDS_LIST)
-        self.cur: str = "" # current character
-
+        # [self.DEVICES_ID, self.CONNECT_ID,
+        #     self.MONITOR_ID] = self.names.lookup(Scanner.KEYWORDS_LIST)
+        self.cur: str = ""  # current character
 
     def get_symbol(self):
         """Translate the next sequence of characters into a symbol."""
@@ -93,7 +100,7 @@ class Scanner:
                 symbol.type = Scanner.KEYWORD
             else:
                 symbol.type = Scanner.NAME
-            symbol.id, = self.names.lookup([name_string])
+            (symbol.id,) = self.names.lookup([name_string])
 
         # number
         elif self.cur.isdigit():
@@ -125,11 +132,11 @@ class Scanner:
         # eof
         elif self.cur == "":
             symbol.type = Scanner.EOF
-        
+
         else:
             print("Not a valid symbol.")
             self.advance()
-            
+
         return symbol
 
     def get_next_non_whitespace(self) -> None:
@@ -138,7 +145,7 @@ class Scanner:
             self.cur = self.file.read(1)
 
     def get_name(self) -> str:
-        """Starting at a letter, return a name given by a sequence of 
+        """Starting at a letter, return a name given by a sequence of
         alphanumeric characters"""
         name_string = ""
         while self.cur.isalpha():
