@@ -20,6 +20,8 @@ from monitors import Monitors
 from scanner import Scanner
 from parse import Parser
 
+from matplotlib import colors
+import numpy as np
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -58,6 +60,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         GLUT.glutInit()
         self.init = False
         self.context = wxcanvas.GLContext(self)
+        self.monitors = monitors
 
         # Initialise variables for panning
         self.pan_x = 0
@@ -204,6 +207,20 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             else:
                 GLUT.glutBitmapCharacter(font, ord(character))
 
+    def render_monitors(self, x_pos, y_pos):                    # TODO finish this <top prio>
+        "Render the monitor traces."
+        # Find out which monitors we need to draw
+        [monitored_list, _] = self.monitors.get_signal_names()
+
+        # Create list of colours to draw from later
+        no_monitors = len(monitored_list)
+        hsv_colourbank =   [np.linspace(0, 1, no_monitors), 
+                            np.zeros(no_monitors), 
+                            np.zeros(no_monitors)]
+        rgb_colourbank = colors.hsv_to_rgb(hsv_colourbank)
+
+        # 
+
 
 class Gui(wx.Frame):
     """Configure the main window and all the widgets.
@@ -244,19 +261,19 @@ class Gui(wx.Frame):
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&About")
-        fileMenu.Append(wx.ID_FILE, "&Show Description")            ################ Need to implement description
+        fileMenu.Append(wx.ID_FILE, "&Show Description")            #TODO Implement description file readout
         fileMenu.Append(wx.ID_EXIT, "&Exit")
         menuBar.Append(fileMenu, "&File")
 
         # Help Menu
         helpMenu = wx.Menu()
         helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")           
-        helpMenu.Append(wx.ID_HELP_CONTENTS, "&GUI")                ################ Need to implement pop ups explaining each window
+        helpMenu.Append(wx.ID_HELP_CONTENTS, "&GUI")                #TODO Implement pop ups explaining each window
         menuBar.Append(helpMenu, "&Help")
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    ################ Need to implement Light/Dark mode
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    #TODO Implement Light/Dark mode
         menuBar.Append(settingsMenu, "&Settings")
         
         self.SetMenuBar(menuBar)
@@ -309,7 +326,7 @@ class Gui(wx.Frame):
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
 
-    def on_menu(self, event):                                                       ################### Go here to implement menu stuff
+    def on_menu(self, event):                                                       #TODO Go here to implement menu stuff
         """Handle the event when the user selects a menu item."""
         Id = event.GetId()
 
@@ -345,6 +362,7 @@ class Gui(wx.Frame):
 
     def on_text_input(self, event):
         """Handle the event when the user enters text."""
+        self.cursor = 0 # lets it read more than just the first input by resetting the cursor each time
         self.text_input_value = self.text_input.GetValue()
         print(self.text_input_value)
         # Add integration with userint.py for running commands from the text box
@@ -540,3 +558,7 @@ class Gui(wx.Frame):
                 self.cycles_completed += cycles
                 print(" ".join(["Continuing for", str(cycles), "cycles.",
                                 "Total:", str(self.cycles_completed)]))
+
+
+#TODO Open a file browser to select definition file
+#TODO Allow comments to be added at the end of the definition file?
