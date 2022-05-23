@@ -73,10 +73,14 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         # Initialise variables for zooming
         self.zoom = 1
 
-        # Initialise some drawing settings                                          # TODO make a Settings option to change these?
+        # Initialise some drawing settings                                          # TODO make a Settings option to change these (change values->clear canvas->redraw canvas)
         self.monitorheight = 30
         self.monitorspacing = 5
         self.monitorstep = 30
+
+        # Initialise in light-mode
+        self.textcolour = (0.0, 0.0, 0.0)  # Light mode text colour is black
+        # Clear colour is already done in init_gl
 
         # Bind events to the canvas
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -184,7 +188,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
     def render_text(self, text, x_pos, y_pos):
         """Handle text drawing operations."""
-        GL.glColor3f(0.0, 0.0, 0.0)  # text is black
+        GL.glColor3f(*self.textcolour)  # text is black
         GL.glRasterPos2f(x_pos, y_pos)
         self.fontsize = 12
         font = GLUT.GLUT_BITMAP_HELVETICA_12                    # TODO font options?
@@ -279,6 +283,17 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         # and swap the back buffer to the front
         GL.glFlush()
         self.SwapBuffers()
+    
+    def toggledarkmode(self):
+        if self.textcolour == [0.0, 0.0, 0.0]:
+            # Now switching to dark mode
+            self.textcolour = [1.0, 1.0, 1.0]   # Text is now white
+            GL.glClearColor(0.1, 0.1, 0.1, 0.0) # Background is dark grey
+        else:
+            # Now switching to light mode
+            self.textcolour = [0.0, 0.0, 0.0]   # Text is now black
+            GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
+
 
 
 class Gui(wx.Frame):
@@ -312,6 +327,13 @@ class Gui(wx.Frame):
         self.monitors = monitors
         self.network = network
 
+        # Set the background and text colours (default is light mode)
+        self.lightmode = True
+        self.textcolour = wx.Colour(0, 0, 0) # Black text
+        self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
+        self.windowcolour = wx.Colour(255, 255, 255) # White windows
+
+        # Variables for reading from the input text box
         self.character = "" # current character
         self.cursor = 0  # cursor position
 
@@ -347,15 +369,18 @@ class Gui(wx.Frame):
                                 wx.ID_ANY, 
                                 size=(300,300),
                                 style=self.logstyle)
+        self.log.SetBackgroundColour(self.windowcolour)
         sys.stdout=self.log
         self.text_input = wx.TextCtrl(self, wx.ID_ANY, "",
                                     style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        self.text_input.SetBackgroundColour(self.windowcolour)
 
 
         # Configure the widgets
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
-        self.run_button = wx.Button(self, wx.ID_ANY, "Run")
+        self.spin.SetBackgroundColour(self.windowcolour)
+        self.run_button = wx.Button(self, wx.ID_ANY, "Run")         # TODO this button is useless atm
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
@@ -407,6 +432,31 @@ class Gui(wx.Frame):
                         "\nh         - help (this command)"
                         "\nq         - quit the program",
                             "Command Help", wx.ICON_INFORMATION | wx.OK)
+
+        # Settings Tab
+        if Id == wx.ID_SELECT_COLOR:
+            # Switch colours for everything
+            self.canvas.toggledarkmode()        # FIXME for some reason this doesn't activate the first time, but does later so the canvas and everything else desync
+            if self.lightmode:
+                # Change to dark mode
+                self.textcolour = wx.Colour(255, 255, 255) # White text
+                self.SetBackgroundColour(wx.Colour(0, 0, 0)) # Background colour is black
+                self.windowcolour = wx.Colour(20, 20, 20) # Dark Grey windows
+                self.lightmode = False
+            else:
+                # Change to light mode
+                self.textcolour = wx.Colour(0, 0, 0) # Black text
+                self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
+                self.windowcolour = wx.Colour(255, 255, 255) # White windows
+                self.lightmode = True
+            # Trigger updates for everything to recolour
+            self.Refresh()
+            # Sub-windows
+            self.log.SetBackgroundColour(self.windowcolour)
+            self.text_input.SetBackgroundColour(self.windowcolour)
+            self.spin.SetBackgroundColour(self.windowcolour)
+
+                                                # TODO need to make text change colour as well
 
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""

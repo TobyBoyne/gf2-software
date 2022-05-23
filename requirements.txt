@@ -1,7 +1,11 @@
 wxpython
+pyopengl
 
 pytest
 pydocstyle
 pycodestyle
+
+numpy
+matplotlib
 
 pre-commit
