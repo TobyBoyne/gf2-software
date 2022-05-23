@@ -61,6 +61,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.init = False
         self.context = wxcanvas.GLContext(self)
         self.monitors = monitors
+        self.devices = devices
 
         # Initialise variables for panning
         self.pan_x = 0
@@ -70,6 +71,11 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
         # Initialise variables for zooming
         self.zoom = 1
+
+        # Initialise some drawing settings                                          # TODO make a Settings option to change these?
+        self.monitorheight = 30
+        self.monitorspacing = 5
+        self.monitorstep = 30
 
         # Bind events to the canvas
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -110,13 +116,13 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         GL.glBegin(GL.GL_LINE_STRIP)
         for i in range(10):
             x = (i * 20) + 10
-            x_next = (i * 20) + 30
+            x_last = (i * 20) + 30
             if i % 2 == 0:
                 y = 75
             else:
                 y = 100
             GL.glVertex2f(x, y)
-            GL.glVertex2f(x_next, y)
+            GL.glVertex2f(x_last, y)
         GL.glEnd()
 
         # We have been drawing to the back buffer, flush the graphics pipeline
@@ -198,7 +204,8 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         """Handle text drawing operations."""
         GL.glColor3f(0.0, 0.0, 0.0)  # text is black
         GL.glRasterPos2f(x_pos, y_pos)
-        font = GLUT.GLUT_BITMAP_HELVETICA_12
+        self.fontsize = 12
+        font = GLUT.GLUT_BITMAP_HELVETICA_12                    # TODO font options?
 
         for character in text:
             if character == '\n':
@@ -207,19 +214,89 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             else:
                 GLUT.glutBitmapCharacter(font, ord(character))
 
-    def render_monitors(self, x_pos, y_pos):                    # TODO finish this <top prio>
+    def render_monitors(self, x_pos, y_pos):                    # TODO test this, need some other stuff working first
         "Render the monitor traces."
-        # Find out which monitors we need to draw
-        [monitored_list, _] = self.monitors.get_signal_names()
+        self.SetCurrent(self.context)
+        if not self.init:
+            # Configure the viewport, modelview and projection matrices
+            self.init_gl()
+            self.init = True
+
+        # Clear everything
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+
+        # Get some info about what needs to be drawn
+        no_monitors = len(self.monitors.monitors_dictionary)
+        margin = self.monitors.get_margin()
 
         # Create list of colours to draw from later
-        no_monitors = len(monitored_list)
         hsv_colourbank =   [np.linspace(0, 1, no_monitors), 
                             np.zeros(no_monitors), 
                             np.zeros(no_monitors)]
         rgb_colourbank = colors.hsv_to_rgb(hsv_colourbank)
+        
+        # Draw
+        index = 0
+        for device_id, output_id in self.monitors.monitors_dictionary:
+            
+            monitor_name = self.devices.get_signal_name(device_id, output_id)
+            signal_list = self.monitors.monitors_dictionary[(device_id, output_id)]
 
-        # 
+            # Names
+            y = y_pos+index*(self.monitorheight+self.monitorspacing)
+            self.render_text(monitor_name, x_pos, y)
+            
+            # Traces
+            GL.glColor3f(rgb_colourbank[index])
+            index += 1
+            GL.glBegin(GL.GL_LINE_STRIP)
+            x = x_pos + self.fontsize*0.6*margin
+            
+            for signal in signal_list:
+                x_last = x
+                if signal == self.devices.HIGH:
+                    y = y_pos + (index + 1) * self.monitorheight + index * self.monitorspacing # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep
+                if signal == self.devices.LOW:
+                    y = y_pos+index*(self.monitorheight+self.monitorspacing) # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep
+                if signal == self.devices.RISING:
+                    y = y_pos+index*(self.monitorheight+self.monitorspacing) # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep/3 
+                    GL.glVertex2f(x, y)
+                    GL.glVertex2f(x_last, y)
+                    x_last = x
+                    x += self.monitorstep/3
+                    GL.glVertex2f(x, y+self.monitorheight)
+                    GL.glVertex2f(x_last, y)
+                    y += self.monitorheight
+                    x_last = x
+                    x += self.monitorstep/3
+                if signal == self.devices.FALLING:
+                    y = y_pos + (index + 1) * self.monitorheight + index * self.monitorspacing # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep/3
+                    GL.glVertex2f(x, y)
+                    GL.glVertex2f(x_last, y)
+                    x_last = x
+                    x += self.monitorstep/3
+                    GL.glVertex2f(x, y-self.monitorheight)
+                    GL.glVertex2f(x_last, y)
+                    y -= self.monitorheight
+                    x_last = x
+                    x += self.monitorstep/3
+                if signal == self.devices.BLANK:
+                    # Skips one step ahead without drawing a line between, might leave a dot?
+                    x += self.monitorstep
+                    x_last = x
+                GL.glVertex2f(x, y)
+                GL.glVertex2f(x_last, y)
+
+            GL.glEnd()
+
+        # We have been drawing to the back buffer, flush the graphics pipeline
+        # and swap the back buffer to the front
+        GL.glFlush()
+        self.SwapBuffers()
 
 
 class Gui(wx.Frame):
