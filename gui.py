@@ -62,6 +62,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.context = wxcanvas.GLContext(self)
         self.monitors = monitors
         self.devices = devices
+        self.monitorsshow = False
 
         # Initialise variables for panning
         self.pan_x = 0
@@ -137,11 +138,10 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             # Configure the viewport, modelview and projection matrices
             self.init_gl()
             self.init = True
-
-        size = self.GetClientSize()
-        text = "".join(["Canvas redrawn on paint event, size is ",
-                        str(size.width), ", ", str(size.height)])
-        self.render(text)
+        if self.monitorsshow:                                           # FIXME I don't know if this is broken or not but if it's buggy check this first
+            self.render_monitors(0, 0)
+        else:
+            self.render("Monitor traces will appear after the circuit is run")
 
     def on_size(self, event):
         """Handle the canvas resize event."""
@@ -151,7 +151,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
     def on_mouse(self, event):
         """Handle mouse events."""
-        text = ""
         # Calculate object coordinates of the mouse position
         size = self.GetClientSize()
         ox = (event.GetX() - self.pan_x) / self.zoom
@@ -160,23 +159,12 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         if event.ButtonDown():
             self.last_mouse_x = event.GetX()
             self.last_mouse_y = event.GetY()
-            text = "".join(["Mouse button pressed at: ", str(event.GetX()),
-                            ", ", str(event.GetY())])
-        if event.ButtonUp():
-            text = "".join(["Mouse button released at: ", str(event.GetX()),
-                            ", ", str(event.GetY())])
-        if event.Leaving():
-            text = "".join(["Mouse left canvas at: ", str(event.GetX()),
-                            ", ", str(event.GetY())])
         if event.Dragging():
             self.pan_x += event.GetX() - self.last_mouse_x
             self.pan_y -= event.GetY() - self.last_mouse_y
             self.last_mouse_x = event.GetX()
             self.last_mouse_y = event.GetY()
             self.init = False
-            text = "".join(["Mouse dragged to: ", str(event.GetX()),
-                            ", ", str(event.GetY()), ". Pan is now: ",
-                            str(self.pan_x), ", ", str(self.pan_y)])
         if event.GetWheelRotation() < 0:
             self.zoom *= (1.0 + (
                 event.GetWheelRotation() / (20 * event.GetWheelDelta())))
@@ -184,8 +172,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.pan_x -= (self.zoom - old_zoom) * ox
             self.pan_y -= (self.zoom - old_zoom) * oy
             self.init = False
-            text = "".join(["Negative mouse wheel rotation. Zoom is now: ",
-                            str(self.zoom)])
         if event.GetWheelRotation() > 0:
             self.zoom /= (1.0 - (
                 event.GetWheelRotation() / (20 * event.GetWheelDelta())))
@@ -193,10 +179,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.pan_x -= (self.zoom - old_zoom) * ox
             self.pan_y -= (self.zoom - old_zoom) * oy
             self.init = False
-            text = "".join(["Positive mouse wheel rotation. Zoom is now: ",
-                            str(self.zoom)])
-        if text:
-            self.render(text)
         else:
             self.Refresh()  # triggers the paint event
 
@@ -384,21 +366,21 @@ class Gui(wx.Frame):
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         side_sizer = wx.BoxSizer(wx.VERTICAL)
-        canvas_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        log_sizer = wx.BoxSizer(wx.VERTICAL)
+        left_sizer = wx.BoxSizer(wx.VERTICAL)
+        log_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        main_sizer.Add(canvas_sizer, 5, wx.EXPAND | wx.TOP, 5)
-        main_sizer.Add(log_sizer, 1, wx.BOTTOM, 5)
-        main_sizer.Add(side_sizer, 1, wx.ALL, 5)
-
-        canvas_sizer.Add(self.canvas, 5, wx.EXPAND | wx.ALL, 5)
+        main_sizer.Add(left_sizer, 5, wx.EXPAND, 5)
+        main_sizer.Add(side_sizer, 0,0)
 
         log_sizer.Add(self.log, 1, wx.TOP, 5)
-        log_sizer.Add(self.text_input, 5, wx.ALL, 5)
+        log_sizer.Add(self.text_input, 5, wx.BOTTOM, 5)
 
-        side_sizer.Add(self.text, 1, wx.TOP, 10)
-        side_sizer.Add(self.spin, 1, wx.ALL, 5)
-        side_sizer.Add(self.run_button, 1, wx.ALL, 5)
+        left_sizer.Add(self.canvas, 5, wx.EXPAND | wx.ALL, 5)
+        left_sizer.Add(log_sizer, 1, wx.BOTTOM, 5)
+
+        side_sizer.Add(self.text, 2, wx.TOP, 10)
+        side_sizer.Add(self.spin, 2, wx.ALL, 5)
+        side_sizer.Add(self.run_button, 2, wx.ALL, 5)
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
@@ -624,6 +606,7 @@ class Gui(wx.Frame):
             self.devices.cold_startup()
             if self.run_network(cycles):
                 self.cycles_completed += cycles
+            self.canvas.monitorsshow = True
 
     def continue_command(self):
         """Continue a previously run simulation."""
