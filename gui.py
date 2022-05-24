@@ -382,16 +382,24 @@ class Gui(wx.Frame):
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
         self.run_button.SetBackgroundColour(self.windowcolour)
-        self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches?
-        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, self.switch_list, "Toggle Switches")
-        # TODO set all the switches that should be set by the definition file automatically
+        try:
+            self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches?
+        except AttributeError:
+            self.switch_list = ["SW1", "SW2", "Switch 3"]       # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
+        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.switch_list, name="Toggle Switches")
+        for switch in range(len(self.switch_list)):
+            try:
+                if self.switch_list(switch).switch_state == 1:
+                    self.switch_toggles.SetCheckedItems(switch)
+            except TypeError or AttributeError:                               # I guessed the error and it worked, this might cause issues later
+                self.switch_toggles.SetCheckedItems([0, 2])
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
         self.spin.Bind(wx.EVT_SPINCTRL, self.on_spin)
         self.run_button.Bind(wx.EVT_BUTTON, self.on_run_button)
         self.text_input.Bind(wx.EVT_TEXT_ENTER, self.on_text_input)
-        # TODO add event to switch_toggles to handle changing the switch states
+        self.switch_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_switch_check)
 
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -411,6 +419,7 @@ class Gui(wx.Frame):
         side_sizer.Add(self.text, 2, wx.TOP, 10)
         side_sizer.Add(self.spin, 2, wx.ALL, 5)
         side_sizer.Add(self.run_button, 2, wx.ALL, 5)
+        side_sizer.Add(self.switch_toggles, 0, 0)
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
@@ -467,19 +476,37 @@ class Gui(wx.Frame):
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
             self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
-                        
+            for switch in range(len(self.switch_list)):
+                self.switch_toggles.SetItemBackgroundColour(switch, self.windowcolour)
+                self.switch_toggles.SetItemForegroundColour(switch, self.textcolour)
+
+
+    ## Sidebar events ##
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""
         spin_value = self.spin.GetValue()
         print("".join(["New spin control value: ", str(spin_value)]))
         
-
     def on_run_button(self, event):
         """Handle the event when the user clicks the run button."""
         print("Run button pressed.")
         self.run_command(self.spin.GetValue())
-        
 
+    def on_switch_check(self, event):                                               # TODO test me
+        """Handle the event when the user clicks one of the switch checkboxes"""
+        switch_index = event.GetInt()
+        switch = self.switch_list[switch_index]
+        switch_name = switch.device_id
+        switch_before = switch.switch_state
+        switch_after = 1 - switch_before
+        print("".join([str(switch_name), " has been changed from ", str(switch_before), " to ", str(switch_after)]))
+        if self.devices.set_switch(switch_name, switch_after):
+            print("Successfully set switch.")
+        else:
+            print("Error! Invalid switch.")
+
+
+    ## Text command events ##
     def on_text_input(self, event):
         """Handle the event when the user enters text."""
         self.cursor = 0 # lets it read more than just the first input by resetting the cursor each time
@@ -615,10 +642,6 @@ class Gui(wx.Frame):
 
     def switch_command(self, level="Read text"):
         """Set the specified switch to the specified signal level."""
-        if level == "Read text":
-            switch_id = self.read_name()
-        elif level not in (0,1):
-            print("Invalid switch level (must be 0 or 1). Enter 'h' for help.")
         switch_id = self.read_name()
         if switch_id is not None:
             switch_state = self.read_number(0, 1)
