@@ -80,7 +80,8 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
         # Initialise in light-mode
         self.textcolour = (0.0, 0.0, 0.0)  # Light mode text colour is black
-        # Clear colour is already done in init_gl
+        self.SetCurrent(self.context)
+        GL.glClearColor(1.0, 1.0, 1.0, 0.0)
 
         # Bind events to the canvas
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -92,7 +93,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         size = self.GetClientSize()
         self.SetCurrent(self.context)
         GL.glDrawBuffer(GL.GL_BACK)
-        GL.glClearColor(1.0, 1.0, 1.0, 0.0)
         GL.glViewport(0, 0, size.width, size.height)
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
@@ -285,13 +285,13 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.SwapBuffers()
     
     def toggledarkmode(self):
-        if self.textcolour == [0.0, 0.0, 0.0]:
+        if self.textcolour == (0.0, 0.0, 0.0):
             # Now switching to dark mode
-            self.textcolour = [1.0, 1.0, 1.0]   # Text is now white
+            self.textcolour = (1.0, 1.0, 1.0)   # Text is now white
             GL.glClearColor(0.1, 0.1, 0.1, 0.0) # Background is dark grey
         else:
             # Now switching to light mode
-            self.textcolour = [0.0, 0.0, 0.0]   # Text is now black
+            self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
             GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
 
 
@@ -354,7 +354,7 @@ class Gui(wx.Frame):
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    #TODO Implement Light/Dark mode
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    
         menuBar.Append(settingsMenu, "&Settings")
         
         self.SetMenuBar(menuBar)
@@ -367,7 +367,7 @@ class Gui(wx.Frame):
         self.logstyle = wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL
         self.log = wx.TextCtrl(self, 
                                 wx.ID_ANY, 
-                                size=(300,300),
+                                size=(450,300),
                                 style=self.logstyle)
         self.log.SetBackgroundColour(self.windowcolour)
         sys.stdout=self.log
@@ -380,7 +380,8 @@ class Gui(wx.Frame):
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
         self.spin.SetBackgroundColour(self.windowcolour)
-        self.run_button = wx.Button(self, wx.ID_ANY, "Run")         # TODO this button is useless atm
+        self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
+        self.run_button.SetBackgroundColour(self.windowcolour)
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
@@ -436,7 +437,7 @@ class Gui(wx.Frame):
         # Settings Tab
         if Id == wx.ID_SELECT_COLOR:
             # Switch colours for everything
-            self.canvas.toggledarkmode()        # FIXME for some reason this doesn't activate the first time, but does later so the canvas and everything else desync
+            self.canvas.toggledarkmode()        
             if self.lightmode:
                 # Change to dark mode
                 self.textcolour = wx.Colour(255, 255, 255) # White text
@@ -449,15 +450,19 @@ class Gui(wx.Frame):
                 self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
                 self.windowcolour = wx.Colour(255, 255, 255) # White windows
                 self.lightmode = True
-            # Trigger updates for everything to recolour
+            # Trigger updates for background to recolour
             self.Refresh()
             # Sub-windows
             self.log.SetBackgroundColour(self.windowcolour)
+            self.log.SetForegroundColour(self.textcolour)
             self.text_input.SetBackgroundColour(self.windowcolour)
+            self.text_input.SetForegroundColour(self.textcolour)
             self.spin.SetBackgroundColour(self.windowcolour)
-
-                                                # TODO need to make text change colour as well
-
+            self.spin.SetForegroundColour(self.textcolour)
+            self.run_button.SetBackgroundColour(self.windowcolour)
+            self.run_button.SetForegroundColour(self.textcolour)
+            self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
+                        
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""
         spin_value = self.spin.GetValue()
@@ -467,6 +472,7 @@ class Gui(wx.Frame):
     def on_run_button(self, event):
         """Handle the event when the user clicks the run button."""
         print("Run button pressed.")
+        self.run_command(self.spin.GetValue())
         
 
     def on_text_input(self, event):
@@ -476,25 +482,29 @@ class Gui(wx.Frame):
         print(self.text_input_value)
         # Add integration with userint.py for running commands from the text box
         command = self.read_command()
-        if command == "h":
-            self.help_command()
-        elif command == "s":
-            self.switch_command()
-        elif command == "m":
-            self.monitor_command()
-        elif command == "z":
-            self.zap_command()
-        elif command == "r":
-            self.run_command()
-        elif command == "c":
-            self.continue_command()
-        elif command == "q":
-            self.Close(True)
-        else:
-            print("Invalid command. Enter 'h' for help.")
+        try:
+            if command == "h":
+                self.help_command()
+            elif command == "s":
+                self.switch_command()
+            elif command == "m":
+                self.monitor_command()
+            elif command == "z":
+                self.zap_command()
+            elif command == "r":
+                self.run_command()
+            elif command == "c":
+                self.continue_command()
+            elif command == "q":
+                self.Close(True)
+            else:
+                print("Invalid command. Enter 'h' for help.")
+        except AttributeError:
+            print("This function has not been implemented yet. Enter 'h' for help.")
+            pass
 
         # Reset text_input to be empty
-        self.text_input.SetValue("") # Might create a problem with whitespace being added to the input box
+        self.text_input.SetValue("") # FIXME Might create a problem with whitespace being added to the input box
 
     ## userint.py functions for the command line input
     def read_command(self):
@@ -645,10 +655,13 @@ class Gui(wx.Frame):
         self.monitors.display_signals()
         return True
 
-    def run_command(self):
+    def run_command(self, cycles="Read text"):
         """Run the simulation from scratch."""
         self.cycles_completed = 0
-        cycles = self.read_number(0, None)
+        if cycles == "Read text":
+            cycles = self.read_number(0, None)
+        elif type(cycles) != int:
+            print("Invalid number of cycles (must be integer). Enter 'h' for help.")
 
         if cycles is not None:  # if the number of cycles provided is valid
             self.monitors.reset_monitors()
