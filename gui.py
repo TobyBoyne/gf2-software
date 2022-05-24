@@ -20,6 +20,8 @@ from monitors import Monitors
 from scanner import Scanner
 from parse import Parser
 
+from matplotlib import colors
+import numpy as np
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -58,6 +60,9 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         GLUT.glutInit()
         self.init = False
         self.context = wxcanvas.GLContext(self)
+        self.monitors = monitors
+        self.devices = devices
+        self.monitorsshow = False
 
         # Initialise variables for panning
         self.pan_x = 0
@@ -67,6 +72,16 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
         # Initialise variables for zooming
         self.zoom = 1
+
+        # Initialise some drawing settings                                          # TODO make a Settings option to change these (change values->clear canvas->redraw canvas)
+        self.monitorheight = 30
+        self.monitorspacing = 5
+        self.monitorstep = 30
+
+        # Initialise in light-mode
+        self.textcolour = (0.0, 0.0, 0.0)  # Light mode text colour is black
+        self.SetCurrent(self.context)
+        GL.glClearColor(1.0, 1.0, 1.0, 0.0)
 
         # Bind events to the canvas
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -78,7 +93,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         size = self.GetClientSize()
         self.SetCurrent(self.context)
         GL.glDrawBuffer(GL.GL_BACK)
-        GL.glClearColor(1.0, 1.0, 1.0, 0.0)
         GL.glViewport(0, 0, size.width, size.height)
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
@@ -107,13 +121,13 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         GL.glBegin(GL.GL_LINE_STRIP)
         for i in range(10):
             x = (i * 20) + 10
-            x_next = (i * 20) + 30
+            x_last = (i * 20) + 30
             if i % 2 == 0:
                 y = 75
             else:
                 y = 100
             GL.glVertex2f(x, y)
-            GL.glVertex2f(x_next, y)
+            GL.glVertex2f(x_last, y)
         GL.glEnd()
 
         # We have been drawing to the back buffer, flush the graphics pipeline
@@ -128,11 +142,10 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             # Configure the viewport, modelview and projection matrices
             self.init_gl()
             self.init = True
-
-        size = self.GetClientSize()
-        text = "".join(["Canvas redrawn on paint event, size is ",
-                        str(size.width), ", ", str(size.height)])
-        self.render(text)
+        if self.monitorsshow:                                           # FIXME I don't know if this is broken or not but if it's buggy check this first
+            self.render_monitors(0, 0)
+        else:
+            self.render("Monitor traces will appear after the circuit is run")
 
     def on_size(self, event):
         """Handle the canvas resize event."""
@@ -142,7 +155,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
     def on_mouse(self, event):
         """Handle mouse events."""
-        text = ""
         # Calculate object coordinates of the mouse position
         size = self.GetClientSize()
         ox = (event.GetX() - self.pan_x) / self.zoom
@@ -151,23 +163,12 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         if event.ButtonDown():
             self.last_mouse_x = event.GetX()
             self.last_mouse_y = event.GetY()
-            text = "".join(["Mouse button pressed at: ", str(event.GetX()),
-                            ", ", str(event.GetY())])
-        if event.ButtonUp():
-            text = "".join(["Mouse button released at: ", str(event.GetX()),
-                            ", ", str(event.GetY())])
-        if event.Leaving():
-            text = "".join(["Mouse left canvas at: ", str(event.GetX()),
-                            ", ", str(event.GetY())])
         if event.Dragging():
             self.pan_x += event.GetX() - self.last_mouse_x
             self.pan_y -= event.GetY() - self.last_mouse_y
             self.last_mouse_x = event.GetX()
             self.last_mouse_y = event.GetY()
             self.init = False
-            text = "".join(["Mouse dragged to: ", str(event.GetX()),
-                            ", ", str(event.GetY()), ". Pan is now: ",
-                            str(self.pan_x), ", ", str(self.pan_y)])
         if event.GetWheelRotation() < 0:
             self.zoom *= (1.0 + (
                 event.GetWheelRotation() / (20 * event.GetWheelDelta())))
@@ -175,8 +176,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.pan_x -= (self.zoom - old_zoom) * ox
             self.pan_y -= (self.zoom - old_zoom) * oy
             self.init = False
-            text = "".join(["Negative mouse wheel rotation. Zoom is now: ",
-                            str(self.zoom)])
         if event.GetWheelRotation() > 0:
             self.zoom /= (1.0 - (
                 event.GetWheelRotation() / (20 * event.GetWheelDelta())))
@@ -184,18 +183,15 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.pan_x -= (self.zoom - old_zoom) * ox
             self.pan_y -= (self.zoom - old_zoom) * oy
             self.init = False
-            text = "".join(["Positive mouse wheel rotation. Zoom is now: ",
-                            str(self.zoom)])
-        if text:
-            self.render(text)
         else:
             self.Refresh()  # triggers the paint event
 
     def render_text(self, text, x_pos, y_pos):
         """Handle text drawing operations."""
-        GL.glColor3f(0.0, 0.0, 0.0)  # text is black
+        GL.glColor3f(*self.textcolour)  # text is black
         GL.glRasterPos2f(x_pos, y_pos)
-        font = GLUT.GLUT_BITMAP_HELVETICA_12
+        self.fontsize = 12
+        font = GLUT.GLUT_BITMAP_HELVETICA_12                    # TODO font options?
 
         for character in text:
             if character == '\n':
@@ -203,6 +199,101 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                 GL.glRasterPos2f(x_pos, y_pos)
             else:
                 GLUT.glutBitmapCharacter(font, ord(character))
+
+    def render_monitors(self, x_pos, y_pos):                    # TODO test this, need some other stuff working first
+        "Render the monitor traces."
+        self.SetCurrent(self.context)
+        if not self.init:
+            # Configure the viewport, modelview and projection matrices
+            self.init_gl()
+            self.init = True
+
+        # Clear everything
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+
+        # Get some info about what needs to be drawn
+        no_monitors = len(self.monitors.monitors_dictionary)
+        margin = self.monitors.get_margin()
+
+        # Create list of colours to draw from later
+        hsv_colourbank =   [np.linspace(0, 1, no_monitors), 
+                            np.zeros(no_monitors), 
+                            np.zeros(no_monitors)]
+        rgb_colourbank = colors.hsv_to_rgb(hsv_colourbank)
+        
+        # Draw
+        index = 0
+        for device_id, output_id in self.monitors.monitors_dictionary:
+            
+            monitor_name = self.devices.get_signal_name(device_id, output_id)
+            signal_list = self.monitors.monitors_dictionary[(device_id, output_id)]
+
+            # Names
+            y = y_pos+index*(self.monitorheight+self.monitorspacing)
+            self.render_text(monitor_name, x_pos, y)
+            
+            # Traces
+            GL.glColor3f(rgb_colourbank[index])
+            index += 1
+            GL.glBegin(GL.GL_LINE_STRIP)
+            x = x_pos + self.fontsize*0.6*margin
+            
+            for signal in signal_list:
+                x_last = x
+                if signal == self.devices.HIGH:
+                    y = y_pos + (index + 1) * self.monitorheight + index * self.monitorspacing # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep
+                if signal == self.devices.LOW:
+                    y = y_pos+index*(self.monitorheight+self.monitorspacing) # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep
+                if signal == self.devices.RISING:
+                    y = y_pos+index*(self.monitorheight+self.monitorspacing) # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep/3 
+                    GL.glVertex2f(x, y)
+                    GL.glVertex2f(x_last, y)
+                    x_last = x
+                    x += self.monitorstep/3
+                    GL.glVertex2f(x, y+self.monitorheight)
+                    GL.glVertex2f(x_last, y)
+                    y += self.monitorheight
+                    x_last = x
+                    x += self.monitorstep/3
+                if signal == self.devices.FALLING:
+                    y = y_pos + (index + 1) * self.monitorheight + index * self.monitorspacing # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep/3
+                    GL.glVertex2f(x, y)
+                    GL.glVertex2f(x_last, y)
+                    x_last = x
+                    x += self.monitorstep/3
+                    GL.glVertex2f(x, y-self.monitorheight)
+                    GL.glVertex2f(x_last, y)
+                    y -= self.monitorheight
+                    x_last = x
+                    x += self.monitorstep/3
+                if signal == self.devices.BLANK:
+                    # Skips one step ahead without drawing a line between, might leave a dot?
+                    x += self.monitorstep
+                    x_last = x
+                GL.glVertex2f(x, y)
+                GL.glVertex2f(x_last, y)
+
+            GL.glEnd()
+
+        # We have been drawing to the back buffer, flush the graphics pipeline
+        # and swap the back buffer to the front
+        GL.glFlush()
+        self.SwapBuffers()
+    
+    def toggledarkmode(self):
+        if self.textcolour == (0.0, 0.0, 0.0):
+            # Now switching to dark mode
+            self.textcolour = (1.0, 1.0, 1.0)   # Text is now white
+            GL.glClearColor(0.1, 0.1, 0.1, 0.0) # Background is dark grey
+        else:
+            # Now switching to light mode
+            self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
+            GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
+
 
 
 class Gui(wx.Frame):
@@ -236,6 +327,13 @@ class Gui(wx.Frame):
         self.monitors = monitors
         self.network = network
 
+        # Set the background and text colours (default is light mode)
+        self.lightmode = True
+        self.textcolour = wx.Colour(0, 0, 0) # Black text
+        self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
+        self.windowcolour = wx.Colour(255, 255, 255) # White windows
+
+        # Variables for reading from the input text box
         self.character = "" # current character
         self.cursor = 0  # cursor position
 
@@ -244,19 +342,19 @@ class Gui(wx.Frame):
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&About")
-        fileMenu.Append(wx.ID_FILE, "&Show Description")            ################ Need to implement description
+        fileMenu.Append(wx.ID_FILE, "&Show Description")            #TODO Implement description file readout
         fileMenu.Append(wx.ID_EXIT, "&Exit")
         menuBar.Append(fileMenu, "&File")
 
         # Help Menu
         helpMenu = wx.Menu()
         helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")           
-        helpMenu.Append(wx.ID_HELP_CONTENTS, "&GUI")                ################ Need to implement pop ups explaining each window
+        helpMenu.Append(wx.ID_HELP_CONTENTS, "&GUI")                #TODO Implement pop ups explaining each window
         menuBar.Append(helpMenu, "&Help")
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    ################ Need to implement Light/Dark mode
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    
         menuBar.Append(settingsMenu, "&Settings")
         
         self.SetMenuBar(menuBar)
@@ -269,17 +367,21 @@ class Gui(wx.Frame):
         self.logstyle = wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL
         self.log = wx.TextCtrl(self, 
                                 wx.ID_ANY, 
-                                size=(300,300),
+                                size=(450,300),
                                 style=self.logstyle)
+        self.log.SetBackgroundColour(self.windowcolour)
         sys.stdout=self.log
         self.text_input = wx.TextCtrl(self, wx.ID_ANY, "",
                                     style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        self.text_input.SetBackgroundColour(self.windowcolour)
 
 
         # Configure the widgets
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
-        self.run_button = wx.Button(self, wx.ID_ANY, "Run")
+        self.spin.SetBackgroundColour(self.windowcolour)
+        self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
+        self.run_button.SetBackgroundColour(self.windowcolour)
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
@@ -290,26 +392,26 @@ class Gui(wx.Frame):
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         side_sizer = wx.BoxSizer(wx.VERTICAL)
-        canvas_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        log_sizer = wx.BoxSizer(wx.VERTICAL)
+        left_sizer = wx.BoxSizer(wx.VERTICAL)
+        log_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        main_sizer.Add(canvas_sizer, 5, wx.EXPAND | wx.TOP, 5)
-        main_sizer.Add(log_sizer, 1, wx.BOTTOM, 5)
-        main_sizer.Add(side_sizer, 1, wx.ALL, 5)
-
-        canvas_sizer.Add(self.canvas, 5, wx.EXPAND | wx.ALL, 5)
+        main_sizer.Add(left_sizer, 5, wx.EXPAND, 5)
+        main_sizer.Add(side_sizer, 0,0)
 
         log_sizer.Add(self.log, 1, wx.TOP, 5)
-        log_sizer.Add(self.text_input, 5, wx.ALL, 5)
+        log_sizer.Add(self.text_input, 5, wx.BOTTOM, 5)
 
-        side_sizer.Add(self.text, 1, wx.TOP, 10)
-        side_sizer.Add(self.spin, 1, wx.ALL, 5)
-        side_sizer.Add(self.run_button, 1, wx.ALL, 5)
+        left_sizer.Add(self.canvas, 5, wx.EXPAND | wx.ALL, 5)
+        left_sizer.Add(log_sizer, 1, wx.BOTTOM, 5)
+
+        side_sizer.Add(self.text, 2, wx.TOP, 10)
+        side_sizer.Add(self.spin, 2, wx.ALL, 5)
+        side_sizer.Add(self.run_button, 2, wx.ALL, 5)
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
 
-    def on_menu(self, event):                                                       ################### Go here to implement menu stuff
+    def on_menu(self, event):                                                       #TODO Go here to implement menu stuff
         """Handle the event when the user selects a menu item."""
         Id = event.GetId()
 
@@ -332,6 +434,35 @@ class Gui(wx.Frame):
                         "\nq         - quit the program",
                             "Command Help", wx.ICON_INFORMATION | wx.OK)
 
+        # Settings Tab
+        if Id == wx.ID_SELECT_COLOR:
+            # Switch colours for everything
+            self.canvas.toggledarkmode()        
+            if self.lightmode:
+                # Change to dark mode
+                self.textcolour = wx.Colour(255, 255, 255) # White text
+                self.SetBackgroundColour(wx.Colour(0, 0, 0)) # Background colour is black
+                self.windowcolour = wx.Colour(20, 20, 20) # Dark Grey windows
+                self.lightmode = False
+            else:
+                # Change to light mode
+                self.textcolour = wx.Colour(0, 0, 0) # Black text
+                self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
+                self.windowcolour = wx.Colour(255, 255, 255) # White windows
+                self.lightmode = True
+            # Trigger updates for background to recolour
+            self.Refresh()
+            # Sub-windows
+            self.log.SetBackgroundColour(self.windowcolour)
+            self.log.SetForegroundColour(self.textcolour)
+            self.text_input.SetBackgroundColour(self.windowcolour)
+            self.text_input.SetForegroundColour(self.textcolour)
+            self.spin.SetBackgroundColour(self.windowcolour)
+            self.spin.SetForegroundColour(self.textcolour)
+            self.run_button.SetBackgroundColour(self.windowcolour)
+            self.run_button.SetForegroundColour(self.textcolour)
+            self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
+                        
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""
         spin_value = self.spin.GetValue()
@@ -341,33 +472,39 @@ class Gui(wx.Frame):
     def on_run_button(self, event):
         """Handle the event when the user clicks the run button."""
         print("Run button pressed.")
+        self.run_command(self.spin.GetValue())
         
 
     def on_text_input(self, event):
         """Handle the event when the user enters text."""
+        self.cursor = 0 # lets it read more than just the first input by resetting the cursor each time
         self.text_input_value = self.text_input.GetValue()
         print(self.text_input_value)
         # Add integration with userint.py for running commands from the text box
         command = self.read_command()
-        if command == "h":
-            self.help_command()
-        elif command == "s":
-            self.switch_command()
-        elif command == "m":
-            self.monitor_command()
-        elif command == "z":
-            self.zap_command()
-        elif command == "r":
-            self.run_command()
-        elif command == "c":
-            self.continue_command()
-        elif command == "q":
-            self.Close(True)
-        else:
-            print("Invalid command. Enter 'h' for help.")
+        try:
+            if command == "h":
+                self.help_command()
+            elif command == "s":
+                self.switch_command()
+            elif command == "m":
+                self.monitor_command()
+            elif command == "z":
+                self.zap_command()
+            elif command == "r":
+                self.run_command()
+            elif command == "c":
+                self.continue_command()
+            elif command == "q":
+                self.Close(True)
+            else:
+                print("Invalid command. Enter 'h' for help.")
+        except AttributeError:
+            print("This function has not been implemented yet. Enter 'h' for help.")
+            pass
 
         # Reset text_input to be empty
-        self.text_input.SetValue("") # Might create a problem with whitespace being added to the input box
+        self.text_input.SetValue("") # FIXME Might create a problem with whitespace being added to the input box
 
     ## userint.py functions for the command line input
     def read_command(self):
@@ -518,10 +655,13 @@ class Gui(wx.Frame):
         self.monitors.display_signals()
         return True
 
-    def run_command(self):
+    def run_command(self, cycles="Read text"):
         """Run the simulation from scratch."""
         self.cycles_completed = 0
-        cycles = self.read_number(0, None)
+        if cycles == "Read text":
+            cycles = self.read_number(0, None)
+        elif type(cycles) != int:
+            print("Invalid number of cycles (must be integer). Enter 'h' for help.")
 
         if cycles is not None:  # if the number of cycles provided is valid
             self.monitors.reset_monitors()
@@ -529,6 +669,7 @@ class Gui(wx.Frame):
             self.devices.cold_startup()
             if self.run_network(cycles):
                 self.cycles_completed += cycles
+            self.canvas.monitorsshow = True
 
     def continue_command(self):
         """Continue a previously run simulation."""
@@ -540,3 +681,7 @@ class Gui(wx.Frame):
                 self.cycles_completed += cycles
                 print(" ".join(["Continuing for", str(cycles), "cycles.",
                                 "Total:", str(self.cycles_completed)]))
+
+
+#TODO Open a file browser to select definition file
+#TODO Allow comments to be added at the end of the definition file?
