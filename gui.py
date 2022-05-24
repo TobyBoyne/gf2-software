@@ -382,12 +382,16 @@ class Gui(wx.Frame):
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
         self.run_button.SetBackgroundColour(self.windowcolour)
+        self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches?
+        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, self.switch_list, "Toggle Switches")
+        # TODO set all the switches that should be set by the definition file automatically
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
         self.spin.Bind(wx.EVT_SPINCTRL, self.on_spin)
         self.run_button.Bind(wx.EVT_BUTTON, self.on_run_button)
         self.text_input.Bind(wx.EVT_TEXT_ENTER, self.on_text_input)
+        # TODO add event to switch_toggles to handle changing the switch states
 
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -419,7 +423,8 @@ class Gui(wx.Frame):
         if Id == wx.ID_EXIT:
             self.Close(True)
         if Id == wx.ID_ABOUT:
-            wx.MessageBox("Logic Simulator\nCreated by Mojisola Agboola\n2017",
+            wx.MessageBox("Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
+                          "Group 19 \\ im475 --- tjad2  --- tjb94\n 2022",
                           "About Logsim", wx.ICON_INFORMATION | wx.OK)
 
         # Help Tab
@@ -608,8 +613,12 @@ class Gui(wx.Frame):
         print("h         - help (this command)")
         print("q         - quit the program")
 
-    def switch_command(self):
+    def switch_command(self, level="Read text"):
         """Set the specified switch to the specified signal level."""
+        if level == "Read text":
+            switch_id = self.read_name()
+        elif level not in (0,1):
+            print("Invalid switch level (must be 0 or 1). Enter 'h' for help.")
         switch_id = self.read_name()
         if switch_id is not None:
             switch_state = self.read_number(0, 1)
