@@ -382,17 +382,32 @@ class Gui(wx.Frame):
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
         self.run_button.SetBackgroundColour(self.windowcolour)
+        # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
-            self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches?
+            self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches? Might need an extra line to just get the IDs, but might need to change stuff later if you do
         except AttributeError:
             self.switch_list = ["SW1", "SW2", "Switch 3"]       # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
         self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.switch_list, name="Toggle Switches")
         for switch in range(len(self.switch_list)):
             try:
-                if self.switch_list(switch).switch_state == 1:
-                    self.switch_toggles.SetCheckedItems(switch)
+                if self.switch_list(switch).switch_state == 1: 
+                    self.switch_toggles.Check(switch)
             except TypeError or AttributeError:                               # I guessed the error and it worked, this might cause issues later
                 self.switch_toggles.SetCheckedItems([0, 2])
+        # Repeat the above for monitor trace toggling
+        try:
+            self.monitored_list, self.unmonitored_list = self.monitors.get_signal_names() # Gets the monitored and unmonitored signals
+        except AttributeError:
+            self.monitored_list = ["Out3"]
+            self.unmonitored_list = ["Out1", "Out2", "Out4"]
+        self.all_monitors = self.monitored_list + self.unmonitored_list
+        self.monitor_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.all_monitors, name="Monitor Toggles")
+        if len(self.monitored_list) == 1:
+            self.monitor_toggles.Check(0)
+        elif len(self.monitored_list) > 1:
+            for monitor in range(len(self.monitored_list)): # Only the active monitors
+                self.monitor_toggles.SetCheckedItems(monitor)
+            
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
@@ -400,6 +415,7 @@ class Gui(wx.Frame):
         self.run_button.Bind(wx.EVT_BUTTON, self.on_run_button)
         self.text_input.Bind(wx.EVT_TEXT_ENTER, self.on_text_input)
         self.switch_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_switch_check)
+        self.monitor_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_monitor_check)
 
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -420,6 +436,7 @@ class Gui(wx.Frame):
         side_sizer.Add(self.spin, 2, wx.ALL, 5)
         side_sizer.Add(self.run_button, 2, wx.ALL, 5)
         side_sizer.Add(self.switch_toggles, 0, 0)
+        side_sizer.Add(self.monitor_toggles, 0, 0)
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
@@ -479,6 +496,9 @@ class Gui(wx.Frame):
             for switch in range(len(self.switch_list)):
                 self.switch_toggles.SetItemBackgroundColour(switch, self.windowcolour)
                 self.switch_toggles.SetItemForegroundColour(switch, self.textcolour)
+            for monitor in range(len(self.all_monitors)):
+                self.monitor_toggles.SetItemBackgroundColour(monitor, self.windowcolour)
+                self.monitor_toggles.SetItemForegroundColour(monitor, self.textcolour)
 
 
     ## Sidebar events ##
@@ -504,6 +524,31 @@ class Gui(wx.Frame):
             print("Successfully set switch.")
         else:
             print("Error! Invalid switch.")
+
+    def on_monitor_check(self, event):                                       # TODO test this too, uses same design as on_switch_check above
+        """Handle the event when the user clicks on one of the monitor checkboxes"""
+        monitor_index = event.GetInt()
+        monitor_name = self.all_monitors[monitor_index]
+        # Check if monitor was active or inactive before
+        [device, port] = monitor_name
+        if monitor_name in self.monitored_list:
+            print("".join(["The signal ", monitor_name, " is no longer monitored"]))
+            if self.monitors.remove_monitor(device, port, self.cycles_completed):
+                print("Monitor removed successfully.")
+            else:
+                print("Error! Invalid monitor.")
+        elif monitor_name in self.unmonitored_list:
+            print("".join(["The signal ", monitor_name, " is now being monitored"]))
+            if self.monitors.make_monitor(device, port,
+                                        self.cycles_completed):
+                print("Monitor added successfully.")
+            else: 
+                print("Error! Invalid monitor.")
+        else:
+            print("Something terrible has happened.") # This really shouldn't ever happen
+            
+
+
 
 
     ## Text command events ##
