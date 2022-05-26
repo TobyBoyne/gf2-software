@@ -344,6 +344,7 @@ class Gui(wx.Frame):
         self.devices = devices
         self.monitors = monitors
         self.network = network
+        self.path = path
 
         # Set the background and text colours (default is light mode)
         self.lightmode = True
@@ -360,7 +361,7 @@ class Gui(wx.Frame):
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&About")
-        fileMenu.Append(wx.ID_FILE, "&Show Description")            #TODO Implement description file readout
+        fileMenu.Append(wx.ID_FILE, "&Show Description")      
         fileMenu.Append(wx.ID_SAVE, "&Save Monitor Graphs")        
         fileMenu.Append(wx.ID_EXIT, "&Exit")
         menuBar.Append(fileMenu, "&File")
@@ -400,7 +401,8 @@ class Gui(wx.Frame):
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
-        self.run_button.SetBackgroundColour(self.windowcolour)              # TODO Add text heading above switch list and toggle list to describe what they are
+        self.run_button.SetBackgroundColour(self.windowcolour)         
+        self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches")
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
             self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches? Might need an extra line to just get the IDs, but might need to change stuff later if you do
@@ -414,6 +416,7 @@ class Gui(wx.Frame):
             except TypeError or AttributeError:                               # I guessed the error and it worked, this might cause issues later
                 self.switch_toggles.SetCheckedItems([0, 2])
         # Repeat the above for monitor trace toggling
+        self.monitor_title = wx.StaticText(self, wx.ID_ANY, "Toggle Monitors")
         try:
             self.monitored_list, self.unmonitored_list = self.monitors.get_signal_names() # Gets the monitored and unmonitored signals
         except AttributeError:
@@ -454,13 +457,15 @@ class Gui(wx.Frame):
         side_sizer.Add(self.text, 2, wx.TOP, 10)
         side_sizer.Add(self.spin, 2, wx.ALL, 5)
         side_sizer.Add(self.run_button, 2, wx.ALL, 5)
+        side_sizer.Add(self.switch_title, 0, 0)
         side_sizer.Add(self.switch_toggles, 0, 0)
+        side_sizer.Add(self.monitor_title, 0, 0)
         side_sizer.Add(self.monitor_toggles, 0, 0)
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
 
-    def on_menu(self, event):                                                       #TODO Go here to implement menu stuff
+    def on_menu(self, event):                                                      
         """Handle the event when the user selects a menu item."""
         Id = event.GetId()
 
@@ -475,7 +480,13 @@ class Gui(wx.Frame):
             ask = wx.TextEntryDialog(self, "Please input the filepath you would like to save the image to\nThe default extension is .jpg")
             if ask.ShowModal():
                 image_name = ask.GetValue()
-            self.canvas.save_image(image_name)
+                self.canvas.save_image(image_name)
+        if Id == wx.ID_FILE:
+            file = open(self.path, "r")
+            filetxt = file.read()
+            resp = wx.MessageBox("".join([filetxt, "\n\n---------------------\nPrint this in GUI log?"]), "Description File", wx.ICON_INFORMATION | wx.YES | wx.NO)
+            if resp == wx.YES:
+                print(filetxt)
 
         # Help Tab
         if Id == wx.ID_HELP_COMMANDS:
@@ -517,6 +528,8 @@ class Gui(wx.Frame):
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
             self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
+            self.switch_title.SetForegroundColour(self.textcolour)
+            self.monitor_title.SetForegroundColour(self.textcolour)
             for switch in range(len(self.switch_list)):
                 self.switch_toggles.SetItemBackgroundColour(switch, self.windowcolour)
                 self.switch_toggles.SetItemForegroundColour(switch, self.textcolour)
