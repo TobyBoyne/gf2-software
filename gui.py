@@ -8,6 +8,7 @@ Classes:
 MyGLCanvas - handles all canvas drawing operations.
 Gui - configures the main window and all the widgets.
 """
+from fileinput import filename
 import sys
 import wx
 import wx.glcanvas as wxcanvas
@@ -22,6 +23,7 @@ from parse import Parser
 
 from matplotlib import colors
 import numpy as np
+from PIL import Image
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -294,6 +296,22 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
             GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
 
+    def save_image(self, filepath):
+        # Check the filepath is correct
+        if "." in filepath:
+            dot_index = filepath.find(".")
+            post_dot = filepath[dot_index+1:]
+            if post_dot not in ["png", "jpg", "jpeg"]:
+                print(post_dot)
+                print("There might be an issue with the file extension you have provided.")
+        else:
+            filepath += ".jpg"
+        # Creates image from buffer info
+        size = self.GetClientSize()
+        img_pixels = GL.glReadPixels(0, 0, size.width, size.height, GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+        image = Image.frombytes("RGB", (size.width, size.height), img_pixels).transpose(Image.FLIP_TOP_BOTTOM)
+
+        image.save(filepath)
 
 
 class Gui(wx.Frame):
@@ -343,6 +361,7 @@ class Gui(wx.Frame):
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&About")
         fileMenu.Append(wx.ID_FILE, "&Show Description")            #TODO Implement description file readout
+        fileMenu.Append(wx.ID_SAVE, "&Save Monitor Graphs")        
         fileMenu.Append(wx.ID_EXIT, "&Exit")
         menuBar.Append(fileMenu, "&File")
 
@@ -354,7 +373,7 @@ class Gui(wx.Frame):
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Toggle Dark Mode")    
         menuBar.Append(settingsMenu, "&Settings")
         
         self.SetMenuBar(menuBar)
@@ -381,7 +400,7 @@ class Gui(wx.Frame):
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
-        self.run_button.SetBackgroundColour(self.windowcolour)
+        self.run_button.SetBackgroundColour(self.windowcolour)              # TODO Add text heading above switch list and toggle list to describe what they are
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
             self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches? Might need an extra line to just get the IDs, but might need to change stuff later if you do
@@ -452,6 +471,11 @@ class Gui(wx.Frame):
             wx.MessageBox("Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
                           "Group 19 \\ im475 --- tjad2  --- tjb94\n 2022",
                           "About Logsim", wx.ICON_INFORMATION | wx.OK)
+        if Id == wx.ID_SAVE:
+            ask = wx.TextEntryDialog(self, "Please input the filepath you would like to save the image to\nThe default extension is .jpg")
+            if ask.ShowModal():
+                image_name = ask.GetValue()
+            self.canvas.save_image(image_name)
 
         # Help Tab
         if Id == wx.ID_HELP_COMMANDS:
@@ -545,7 +569,7 @@ class Gui(wx.Frame):
             else: 
                 print("Error! Invalid monitor.")
         else:
-            print("Something terrible has happened.") # This really shouldn't ever happen
+            print("Something has gone wrong: the monitor list doesn't seem to be reading correctly.") # This really shouldn't ever happen
             
 
 

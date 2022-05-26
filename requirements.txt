@@ -7,5 +7,6 @@ pycodestyle
 
 numpy
 matplotlib
+PIL
 
 pre-commit
