@@ -369,7 +369,6 @@ class Gui(wx.Frame):
         # Help Menu
         helpMenu = wx.Menu()
         helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")           
-        helpMenu.Append(wx.ID_HELP_CONTENTS, "&GUI")                #TODO Implement pop ups explaining each window
         menuBar.Append(helpMenu, "&Help")
 
         # Settings Menu

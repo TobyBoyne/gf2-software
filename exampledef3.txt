@@ -1,0 +1,16 @@
+DEVICE  SW1: SWITCH 0,
+        SW2: SWITCH 1,
+        CLK: CLOCK 5,
+        NAND: NAND 2 INPUTS,
+        OR: OR 2 INPUTS,
+        NOR: NOR 2 INPUTS;
+
+CONNECT SW1 -> NAND.I1,
+        CLK -> NAND.I2,
+        CLK -> OR.I1,
+        SW2 -> OR.I2,
+        NAND -> NOR.I1,
+        OR -> NOR.I2;
+
+MONITOR CLK,
+        NOR;
