@@ -8,6 +8,7 @@ Classes:
 MyGLCanvas - handles all canvas drawing operations.
 Gui - configures the main window and all the widgets.
 """
+from fileinput import filename
 import sys
 import wx
 import wx.glcanvas as wxcanvas
@@ -22,6 +23,7 @@ from parse import Parser
 
 from matplotlib import colors
 import numpy as np
+from PIL import Image
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -294,6 +296,22 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
             GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
 
+    def save_image(self, filepath):
+        # Check the filepath is correct
+        if "." in filepath:
+            dot_index = filepath.find(".")
+            post_dot = filepath[dot_index+1:]
+            if post_dot not in ["png", "jpg", "jpeg"]:
+                print(post_dot)
+                print("There might be an issue with the file extension you have provided.")
+        else:
+            filepath += ".jpg"
+        # Creates image from buffer info
+        size = self.GetClientSize()
+        img_pixels = GL.glReadPixels(0, 0, size.width, size.height, GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+        image = Image.frombytes("RGB", (size.width, size.height), img_pixels).transpose(Image.FLIP_TOP_BOTTOM)
+
+        image.save(filepath)
 
 
 class Gui(wx.Frame):
@@ -326,6 +344,7 @@ class Gui(wx.Frame):
         self.devices = devices
         self.monitors = monitors
         self.network = network
+        self.path = path
 
         # Set the background and text colours (default is light mode)
         self.lightmode = True
@@ -342,19 +361,19 @@ class Gui(wx.Frame):
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&About")
-        fileMenu.Append(wx.ID_FILE, "&Show Description")            #TODO Implement description file readout
+        fileMenu.Append(wx.ID_FILE, "&Show Description")      
+        fileMenu.Append(wx.ID_SAVE, "&Save Monitor Graphs")        
         fileMenu.Append(wx.ID_EXIT, "&Exit")
         menuBar.Append(fileMenu, "&File")
 
         # Help Menu
         helpMenu = wx.Menu()
         helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")           
-        helpMenu.Append(wx.ID_HELP_CONTENTS, "&GUI")                #TODO Implement pop ups explaining each window
         menuBar.Append(helpMenu, "&Help")
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Display Mode")    
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Toggle Dark Mode")    
         menuBar.Append(settingsMenu, "&Settings")
         
         self.SetMenuBar(menuBar)
@@ -381,13 +400,43 @@ class Gui(wx.Frame):
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
-        self.run_button.SetBackgroundColour(self.windowcolour)
+        self.run_button.SetBackgroundColour(self.windowcolour)         
+        self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches")
+        # Constructs the switch list in a way that doesn't cause problems before stuff is connected
+        try:
+            self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches? Might need an extra line to just get the IDs, but might need to change stuff later if you do
+        except AttributeError:
+            self.switch_list = ["SW1", "SW2", "Switch 3"]       # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
+        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.switch_list, name="Toggle Switches")
+        for switch in range(len(self.switch_list)):
+            try:
+                if self.switch_list(switch).switch_state == 1: 
+                    self.switch_toggles.Check(switch)
+            except TypeError or AttributeError:                               # I guessed the error and it worked, this might cause issues later
+                self.switch_toggles.SetCheckedItems([0, 2])
+        # Repeat the above for monitor trace toggling
+        self.monitor_title = wx.StaticText(self, wx.ID_ANY, "Toggle Monitors")
+        try:
+            self.monitored_list, self.unmonitored_list = self.monitors.get_signal_names() # Gets the monitored and unmonitored signals
+        except AttributeError:
+            self.monitored_list = ["Out3"]
+            self.unmonitored_list = ["Out1", "Out2", "Out4"]
+        self.all_monitors = self.monitored_list + self.unmonitored_list
+        self.monitor_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.all_monitors, name="Monitor Toggles")
+        if len(self.monitored_list) == 1:
+            self.monitor_toggles.Check(0)
+        elif len(self.monitored_list) > 1:
+            for monitor in range(len(self.monitored_list)): # Only the active monitors
+                self.monitor_toggles.SetCheckedItems(monitor)
+            
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
         self.spin.Bind(wx.EVT_SPINCTRL, self.on_spin)
         self.run_button.Bind(wx.EVT_BUTTON, self.on_run_button)
         self.text_input.Bind(wx.EVT_TEXT_ENTER, self.on_text_input)
+        self.switch_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_switch_check)
+        self.monitor_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_monitor_check)
 
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -407,11 +456,15 @@ class Gui(wx.Frame):
         side_sizer.Add(self.text, 2, wx.TOP, 10)
         side_sizer.Add(self.spin, 2, wx.ALL, 5)
         side_sizer.Add(self.run_button, 2, wx.ALL, 5)
+        side_sizer.Add(self.switch_title, 0, 0)
+        side_sizer.Add(self.switch_toggles, 0, 0)
+        side_sizer.Add(self.monitor_title, 0, 0)
+        side_sizer.Add(self.monitor_toggles, 0, 0)
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
 
-    def on_menu(self, event):                                                       #TODO Go here to implement menu stuff
+    def on_menu(self, event):                                                      
         """Handle the event when the user selects a menu item."""
         Id = event.GetId()
 
@@ -419,8 +472,20 @@ class Gui(wx.Frame):
         if Id == wx.ID_EXIT:
             self.Close(True)
         if Id == wx.ID_ABOUT:
-            wx.MessageBox("Logic Simulator\nCreated by Mojisola Agboola\n2017",
+            wx.MessageBox("Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
+                          "Group 19 \\ im475 --- tjad2  --- tjb94\n 2022",
                           "About Logsim", wx.ICON_INFORMATION | wx.OK)
+        if Id == wx.ID_SAVE:
+            ask = wx.TextEntryDialog(self, "Please input the filepath you would like to save the image to\nThe default extension is .jpg")
+            if ask.ShowModal():
+                image_name = ask.GetValue()
+                self.canvas.save_image(image_name)
+        if Id == wx.ID_FILE:
+            file = open(self.path, "r")
+            filetxt = file.read()
+            resp = wx.MessageBox("".join([filetxt, "\n\n---------------------\nPrint this in GUI log?"]), "Description File", wx.ICON_INFORMATION | wx.YES | wx.NO)
+            if resp == wx.YES:
+                print(filetxt)
 
         # Help Tab
         if Id == wx.ID_HELP_COMMANDS:
@@ -462,19 +527,67 @@ class Gui(wx.Frame):
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
             self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
-                        
+            self.switch_title.SetForegroundColour(self.textcolour)
+            self.monitor_title.SetForegroundColour(self.textcolour)
+            for switch in range(len(self.switch_list)):
+                self.switch_toggles.SetItemBackgroundColour(switch, self.windowcolour)
+                self.switch_toggles.SetItemForegroundColour(switch, self.textcolour)
+            for monitor in range(len(self.all_monitors)):
+                self.monitor_toggles.SetItemBackgroundColour(monitor, self.windowcolour)
+                self.monitor_toggles.SetItemForegroundColour(monitor, self.textcolour)
+
+
+    ## Sidebar events ##
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""
         spin_value = self.spin.GetValue()
         print("".join(["New spin control value: ", str(spin_value)]))
         
-
     def on_run_button(self, event):
         """Handle the event when the user clicks the run button."""
         print("Run button pressed.")
         self.run_command(self.spin.GetValue())
-        
 
+    def on_switch_check(self, event):                                               # TODO test me
+        """Handle the event when the user clicks one of the switch checkboxes"""
+        switch_index = event.GetInt()
+        switch = self.switch_list[switch_index]
+        switch_name = switch.device_id
+        switch_before = switch.switch_state
+        switch_after = 1 - switch_before
+        print("".join([str(switch_name), " has been changed from ", str(switch_before), " to ", str(switch_after)]))
+        if self.devices.set_switch(switch_name, switch_after):
+            print("Successfully set switch.")
+        else:
+            print("Error! Invalid switch.")
+
+    def on_monitor_check(self, event):                                       # TODO test this too, uses same design as on_switch_check above
+        """Handle the event when the user clicks on one of the monitor checkboxes"""
+        monitor_index = event.GetInt()
+        monitor_name = self.all_monitors[monitor_index]
+        # Check if monitor was active or inactive before
+        [device, port] = monitor_name
+        if monitor_name in self.monitored_list:
+            print("".join(["The signal ", monitor_name, " is no longer monitored"]))
+            if self.monitors.remove_monitor(device, port, self.cycles_completed):
+                print("Monitor removed successfully.")
+            else:
+                print("Error! Invalid monitor.")
+        elif monitor_name in self.unmonitored_list:
+            print("".join(["The signal ", monitor_name, " is now being monitored"]))
+            if self.monitors.make_monitor(device, port,
+                                        self.cycles_completed):
+                print("Monitor added successfully.")
+            else: 
+                print("Error! Invalid monitor.")
+        else:
+            print("Something has gone wrong: the monitor list doesn't seem to be reading correctly.") # This really shouldn't ever happen
+            
+
+
+
+
+    ## Text command events ##
     def on_text_input(self, event):
         """Handle the event when the user enters text."""
         self.cursor = 0 # lets it read more than just the first input by resetting the cursor each time
@@ -608,7 +721,7 @@ class Gui(wx.Frame):
         print("h         - help (this command)")
         print("q         - quit the program")
 
-    def switch_command(self):
+    def switch_command(self, level="Read text"):
         """Set the specified switch to the specified signal level."""
         switch_id = self.read_name()
         if switch_id is not None:
