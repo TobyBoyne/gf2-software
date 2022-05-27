@@ -386,10 +386,11 @@ class Gui(wx.Frame):
         self.logstyle = wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL
         self.log = wx.TextCtrl(self, 
                                 wx.ID_ANY, 
-                                size=(450,300),
+                                size=(350,300),
                                 style=self.logstyle)
         self.log.SetBackgroundColour(self.windowcolour)
         sys.stdout=self.log
+        self.input_title = wx.StaticText(self, wx.ID_ANY, "Command Input")
         self.text_input = wx.TextCtrl(self, wx.ID_ANY, "",
                                     style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
         self.text_input.SetBackgroundColour(self.windowcolour)
@@ -402,27 +403,36 @@ class Gui(wx.Frame):
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
         self.run_button.SetBackgroundColour(self.windowcolour)         
         self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches")
+
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
-            self.switch_list = self.devices.find_devices(self.devices.switch) # Gets all the switches? Might need an extra line to just get the IDs, but might need to change stuff later if you do
+            self.switch_list = self.devices.find_devices(self.devices.SWITCH) # Gets all the switches
+            self.switch_list_ids = []
+            for switch in self.switch_list:
+                switch_id = switch.device_id
+                self.switch_list_ids.append(switch_id)
         except AttributeError:
-            self.switch_list = ["SW1", "SW2", "Switch 3"]       # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
-        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.switch_list, name="Toggle Switches")
+            print("An error occured while loading the switches")
+            self.switch_list = [1, 2, 3]
+            self.switch_list_ids = ["Placeholder", "Switch", "Names", "sssssssssssssssssssssssssssss"]       # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
+        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.switch_list_ids, name="Toggle Switches", style = wx.HSCROLL)
         for switch in range(len(self.switch_list)):
             try:
                 if self.switch_list(switch).switch_state == 1: 
                     self.switch_toggles.Check(switch)
-            except TypeError or AttributeError:                               # I guessed the error and it worked, this might cause issues later
+            except TypeError or AttributeError:                               # I guessed the errors and it worked, this might cause issues later
                 self.switch_toggles.SetCheckedItems([0, 2])
+
         # Repeat the above for monitor trace toggling
         self.monitor_title = wx.StaticText(self, wx.ID_ANY, "Toggle Monitors")
         try:
             self.monitored_list, self.unmonitored_list = self.monitors.get_signal_names() # Gets the monitored and unmonitored signals
         except AttributeError:
-            self.monitored_list = ["Out3"]
-            self.unmonitored_list = ["Out1", "Out2", "Out4"]
+            print("An error occured while loading the monitors")
+            self.monitored_list = ["Placeholder_On"]
+            self.unmonitored_list = ["Off1", "Off2", "Off4"]
         self.all_monitors = self.monitored_list + self.unmonitored_list
-        self.monitor_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.all_monitors, name="Monitor Toggles")
+        self.monitor_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.all_monitors, name="Monitor Toggles", style = wx.HSCROLL)
         if len(self.monitored_list) == 1:
             self.monitor_toggles.Check(0)
         elif len(self.monitored_list) > 1:
@@ -443,23 +453,32 @@ class Gui(wx.Frame):
         side_sizer = wx.BoxSizer(wx.VERTICAL)
         left_sizer = wx.BoxSizer(wx.VERTICAL)
         log_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        input_sizer = wx.BoxSizer(wx.VERTICAL)
 
         main_sizer.Add(left_sizer, 5, wx.EXPAND, 5)
-        main_sizer.Add(side_sizer, 0,0)
+        main_sizer.Add(side_sizer, 0, wx.ALL, 5)
 
-        log_sizer.Add(self.log, 1, wx.TOP, 5)
-        log_sizer.Add(self.text_input, 5, wx.BOTTOM, 5)
+        log_sizer.Add(self.log, wx.EXPAND, 1, wx.TOP, 1)
+        log_sizer.Add(input_sizer, 1, wx.LEFT | wx.TOP | wx.BOTTOM, 5)
 
-        left_sizer.Add(self.canvas, 5, wx.EXPAND | wx.ALL, 5)
-        left_sizer.Add(log_sizer, 1, wx.BOTTOM, 5)
+        input_sizer.Add(self.input_title, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        input_sizer.Add(self.text_input, 8, wx.EXPAND, 0)
+        input_sizer.SetMinSize(150, 300)
 
-        side_sizer.Add(self.text, 2, wx.TOP, 10)
-        side_sizer.Add(self.spin, 2, wx.ALL, 5)
-        side_sizer.Add(self.run_button, 2, wx.ALL, 5)
-        side_sizer.Add(self.switch_title, 0, 0)
-        side_sizer.Add(self.switch_toggles, 0, 0)
-        side_sizer.Add(self.monitor_title, 0, 0)
-        side_sizer.Add(self.monitor_toggles, 0, 0)
+        left_sizer.Add(self.canvas, 1, wx.EXPAND)
+        left_sizer.Add(log_sizer, 0, wx.TOP, 5)
+
+        side_sizer.Add(self.text, 0, 1)
+        side_sizer.Add(self.spin, 0, 1)
+        side_sizer.Add(self.run_button, 0, 1)
+        side_sizer.Add(self.switch_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
+        side_sizer.Add(self.switch_toggles, wx.EXPAND, 1, 1)
+        side_sizer.Add(self.monitor_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
+        side_sizer.Add(self.monitor_toggles, wx.EXPAND, 1, 1)
+        self.switch_toggles.SetMaxSize(wx.Size(120, 500))
+        self.monitor_toggles.SetMaxSize(wx.Size(120, 500))
+        self.switch_toggles.SetMinSize(wx.Size(120, 100))
+        self.monitor_toggles.SetMinSize(wx.Size(120, 100))
         
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
@@ -522,6 +541,7 @@ class Gui(wx.Frame):
             self.log.SetForegroundColour(self.textcolour)
             self.text_input.SetBackgroundColour(self.windowcolour)
             self.text_input.SetForegroundColour(self.textcolour)
+            self.input_title.SetForegroundColour(self.textcolour)
             self.spin.SetBackgroundColour(self.windowcolour)
             self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
@@ -529,7 +549,9 @@ class Gui(wx.Frame):
             self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
             self.switch_title.SetForegroundColour(self.textcolour)
             self.monitor_title.SetForegroundColour(self.textcolour)
-            for switch in range(len(self.switch_list)):
+            self.switch_toggles.SetBackgroundColour(self.windowcolour)
+            self.monitor_toggles.SetBackgroundColour(self.windowcolour)
+            for switch in range(len(self.switch_list_ids)):
                 self.switch_toggles.SetItemBackgroundColour(switch, self.windowcolour)
                 self.switch_toggles.SetItemForegroundColour(switch, self.textcolour)
             for monitor in range(len(self.all_monitors)):
