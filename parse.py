@@ -9,10 +9,13 @@ Classes
 Parser - parses the definition file and builds the logic network.
 """
 
+from pyparsing import Optional
+from devices import Devices
 from errorlog import ErrorLog
 from names import Names
+from network import Network
 from scanner import Scanner
-
+from monitors import Monitors
 
 class Parser:
 
@@ -39,11 +42,11 @@ class Parser:
 
     def __init__(self, names, devices, network, monitors, scanner):
         """Initialise constants."""
-        self.names: Names = names
-        self.devices = devices
-        self.network = network
-        self.monitors = monitors
-        self.scanner: Scanner = scanner
+        self.names: Names       = names
+        self.devices: Devices   = devices
+        self.network: Network   = network
+        self.monitors: Monitors = monitors
+        self.scanner: Scanner   = scanner
         self.errorlog = ErrorLog()  # can get the errorlog from the scanner object
 
         self.symbol = None
@@ -111,52 +114,59 @@ class Parser:
             "MONITOR"
         ):
             self.next_symbol()
-            self.outputname()
+            self.monitor()
             while self.symbol.type == Scanner.COMMA:
                 self.next_symbol()
                 self.comment()
-                self.outputname()
+                self.monitor()
             if self.symbol.type == Scanner.SEMICOLON:
                 self.comment()
                 self.next_symbol()
             else:
                 self.error(None, "Expected list to end in semicolon")
         else:
-            self.error(None, "Expected device list")
+            self.error(None, "Expected monitor list")
 
     # --- LIST ITEMS ---
 
     def device(self):
-        self.devicename()
+        device_id = self.devicename()
+        device_kind = None
+        device_property = None
         self.next_symbol()
         if self.symbol.type == Scanner.COLON:
             self.next_symbol()
-            if self.symbol.type == Scanner.NAME and self.symbol.id == self.names.query(
-                "SWITCH"
-            ):
+            device_kind = self.symbol.id
+            if self.symbol.type == Scanner.NAME and self.symbol.id == self.devices.SWITCH:
                 self.next_symbol()
                 if self.symbol.type == Scanner.NUMBER and self.symbol.id in (0, 1):
+                    device_property = self.symbol.id
                     self.next_symbol()
                 else:
                     self.error(None, "Switch must be followed by 0 (off) or 1 (on)")
 
             elif (
                 self.symbol.type == Scanner.NAME
-                and self.symbol.id == self.names.query("CLOCK")
+                and self.symbol.id == self.devices.CLOCK
             ):
                 self.next_symbol()
                 if self.symbol.type == Scanner.NUMBER:
+                    device_property = self.symbol.id
                     self.next_symbol()
                 else:
                     self.error(None, "Clock must be followed by a number (N cycles)")
 
+            elif self.symbol.type == Scanner.NAME and self.symbol.id == self.devices.D_TYPE:
+                self.next_symbol()
+
             elif (
                 self.symbol.type == Scanner.NAME
                 and self.symbol.id
-                in self.names.lookup(["AND", "OR", "NAND", "NOR", "DTYPE", "XOR"])
+                in self.devices.gate_types
             ):
                 self.next_symbol()
                 if self.symbol.type == Scanner.NUMBER:
+                    device_property = self.symbol.id
                     self.next_symbol()
                     if (
                         self.symbol.type == Scanner.KEYWORD
@@ -167,32 +177,58 @@ class Parser:
                         self.error(
                             None, "Number of inputs must be followed by keyword INPUTS"
                         )
+            
             else:
                 self.error(None, "Expected a valid device name")
 
         else:
             self.error(None, "Device definition requires a colon")
 
+        # create the device
+        if self.errorlog.no_errors():
+            error_type = self.devices.make_device(device_id, device_kind, device_property)
+            if error_type != self.devices.NO_ERROR:
+                self.error(None, "Device error")
+
     def connection(self):
-        self.outputname()
+        out_device_id, out_port_id = self.outputname()
         if self.symbol.type == Scanner.ARROW:
             self.next_symbol()
-            self.inputname()
+            in_device_id, in_port_id = self.inputname()
         else:
             self.error(None, "Connections must be linked with an arrow (->)")
 
+        # create the connection
+        if self.errorlog.no_errors():
+            error_type = self.network.make_connection(in_device_id, in_port_id, out_device_id, out_port_id)
+            if error_type != self.network.NO_ERROR:
+                self.error(None, f"Network error {error_type} {self.network.NO_ERROR}")
+
+    def monitor(self):
+        out_device_id, out_port_id = self.outputname()
+
+        # create the monitor
+        if self.errorlog.no_errors():
+           self.monitors.make_monitor(out_device_id, out_port_id)
+
     # --- DEVICES, INPUTS, AND OUTPUTS ---
+
     def devicename(self):
-        pass
+        if self.symbol.type == Scanner.NAME:
+            return self.symbol.id
+        else:
+            self.error(None, "Device name must be a valid alphanumeric identifier")
 
     def inputname(self):
-        self.devicename()
+        device_id = self.devicename()
         self.next_symbol()
         if self.symbol.type == Scanner.DOT:
             self.next_symbol()
             if self.symbol.type == Scanner.NAME:
-                if self.symbol.id in self.names.lookup(["DATA", "CLK", "SET", "CLEAR"]):
+                if self.symbol.id in self.devices.dtype_input_ids:
+                    in_port_id = self.symbol.id
                     self.next_symbol()
+                    return device_id, in_port_id
                 else:
                     input_string = self.names.get_name_string(self.symbol.id)
                     if (
@@ -200,10 +236,11 @@ class Parser:
                         and input_string[0] == "I"
                         and input_string[1:].isdigit()
                     ):
+                        in_port_id = self.symbol.id
                         self.next_symbol()
+                        return device_id, in_port_id
 
                     else:
-                        print(input_string, self.symbol, self.names.names[27])
                         self.error(None, "Must be a valid input")
             else:
                 self.error(
@@ -213,13 +250,15 @@ class Parser:
             self.error(None, "Not an input - must have a dot")
 
     def outputname(self):
-        self.devicename()
+        device_id = self.devicename()
         self.next_symbol()
         if self.symbol.type == Scanner.DOT:
             self.next_symbol()
             if self.symbol.type == Scanner.NAME:
-                if self.symbol.id in self.names.lookup(["Q", "QBAR"]):
+                if self.symbol.id in self.devices.dtype_output_ids:
+                    out_port_id = self.symbol.id
                     self.next_symbol()
+                    return device_id, out_port_id
                 else:
                     self.error(
                         None,
@@ -227,6 +266,8 @@ class Parser:
                     )
             else:
                 self.error(None, "Symbol must be a name")
+        else:
+            return device_id, None
 
     # --- COMMENT ---
 
