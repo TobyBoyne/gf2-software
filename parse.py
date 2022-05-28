@@ -10,6 +10,7 @@ Parser - parses the definition file and builds the logic network.
 """
 
 from errorlog import ErrorLog
+from names import Names
 from scanner import Scanner
 
 
@@ -38,9 +39,9 @@ class Parser:
 
     def __init__(self, names, devices, network, monitors, scanner):
         """Initialise constants."""
-        self.names = names
+        self.names: Names = names
         self.devices = devices
-        self.netword = network
+        self.network = network
         self.monitors = monitors
         self.scanner: Scanner = scanner
         self.errorlog = ErrorLog()  # can get the errorlog from the scanner object
@@ -70,14 +71,16 @@ class Parser:
     # --- LISTS ---
 
     def devicelist(self):
-        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == Scanner.DEVICE_ID:
+        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
+            "DEVICE"
+        ):
             self.next_symbol()
             self.device()
-            while self.symbol.type == self.scanner.COMMA:
+            while self.symbol.type == Scanner.COMMA:
                 self.next_symbol()
                 self.comment()
                 self.device()
-            if self.symbol.type == self.scanner.SEMICOLON:
+            if self.symbol.type == Scanner.SEMICOLON:
                 self.next_symbol()
                 self.comment()
             else:
@@ -86,14 +89,16 @@ class Parser:
             self.error(None, "Expected device list")
 
     def connectionlist(self):
-        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == Scanner.CONNECT_ID:
+        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
+            "CONNECT"
+        ):
             self.next_symbol()
             self.connection()
-            while self.symbol.type == self.scanner.COMMA:
+            while self.symbol.type == Scanner.COMMA:
                 self.next_symbol()
                 self.comment()
                 self.connection()
-            if self.symbol.type == self.scanner.SEMICOLON:
+            if self.symbol.type == Scanner.SEMICOLON:
                 self.comment()
                 self.next_symbol()
             else:
@@ -102,17 +107,16 @@ class Parser:
             self.error(None, "Expected connection list")
 
     def monitorlist(self):
-        if (
-            self.symbol.type == Scanner.KEYWORD
-            and self.symbol.id == Scanner.MONITORS_ID
+        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
+            "MONITOR"
         ):
             self.next_symbol()
             self.outputname()
-            while self.symbol.type == self.scanner.COMMA:
+            while self.symbol.type == Scanner.COMMA:
                 self.next_symbol()
                 self.comment()
                 self.outputname()
-            if self.symbol.type == self.scanner.SEMICOLON:
+            if self.symbol.type == Scanner.SEMICOLON:
                 self.comment()
                 self.next_symbol()
             else:
@@ -127,14 +131,19 @@ class Parser:
         self.next_symbol()
         if self.symbol.type == Scanner.COLON:
             self.next_symbol()
-            if self.symbol.type == Scanner.NAME and self.symbol.id == Scanner.SWITCH:
+            if self.symbol.type == Scanner.NAME and self.symbol.id == self.names.query(
+                "SWITCH"
+            ):
                 self.next_symbol()
                 if self.symbol.type == Scanner.NUMBER and self.symbol.id in (0, 1):
                     self.next_symbol()
                 else:
                     self.error(None, "Switch must be followed by 0 (off) or 1 (on)")
 
-            elif self.symbol.type == Scanner.NAME and self.symbol.id == Scanner.CLOCK:
+            elif (
+                self.symbol.type == Scanner.NAME
+                and self.symbol.id == self.names.query("CLOCK")
+            ):
                 self.next_symbol()
                 if self.symbol.type == Scanner.NUMBER:
                     self.next_symbol()
@@ -143,14 +152,15 @@ class Parser:
 
             elif (
                 self.symbol.type == Scanner.NAME
-                and self.symbol.id in Scanner.DEVICES_LIST
+                and self.symbol.id
+                in self.names.lookup(["AND", "OR", "NAND", "NOR", "DTYPE", "XOR"])
             ):
                 self.next_symbol()
                 if self.symbol.type == Scanner.NUMBER:
                     self.next_symbol()
                     if (
                         self.symbol.type == Scanner.KEYWORD
-                        and self.symbol.id == Scanner.INPUTS_ID
+                        and self.symbol.id == self.names.query("INPUTS")
                     ):
                         self.next_symbol()
                     else:
@@ -158,15 +168,15 @@ class Parser:
                             None, "Number of inputs must be followed by keyword INPUTS"
                         )
             else:
-                self.error(None, f"Expected a device name in {Scanner.DEVICES_LIST}")
+                self.error(None, "Expected a valid device name")
 
         else:
             self.error(None, "Device definition requires a colon")
 
     def connection(self):
         self.outputname()
-        if self.symbol.type == self.scanner.ARROW:
-            self.symbol = self.scanner.get_symbol()
+        if self.symbol.type == Scanner.ARROW:
+            self.next_symbol()
             self.inputname()
         else:
             self.error(None, "Connections must be linked with an arrow (->)")
@@ -181,13 +191,20 @@ class Parser:
         if self.symbol.type == Scanner.DOT:
             self.next_symbol()
             if self.symbol.type == Scanner.NAME:
-                if self.symbol.id in Scanner.DEVICE_OUTPUTS_IDS:
+                if self.symbol.id in self.names.lookup(["DATA", "CLK", "SET", "CLEAR"]):
                     self.next_symbol()
-                if self.symbol.id[0] == "I" and self.symbol.id[1:].isdigit():
-                    self.next_symbol()
-                    pass
                 else:
-                    self.error(None, "Must be a valid input")
+                    input_string = self.names.get_name_string(self.symbol.id)
+                    if (
+                        input_string is not None
+                        and input_string[0] == "I"
+                        and input_string[1:].isdigit()
+                    ):
+                        self.next_symbol()
+
+                    else:
+                        print(input_string, self.symbol, self.names.names[27])
+                        self.error(None, "Must be a valid input")
             else:
                 self.error(
                     None, "For an input, dot must be followed by an alphanumeric name"
@@ -201,12 +218,12 @@ class Parser:
         if self.symbol.type == Scanner.DOT:
             self.next_symbol()
             if self.symbol.type == Scanner.NAME:
-                if self.symbol.id in Scanner.DEVICE_OUTPUTS_IDS:
+                if self.symbol.id in self.names.lookup(["Q", "QBAR"]):
                     self.next_symbol()
                 else:
                     self.error(
                         None,
-                        f"Must be a valid output name {Scanner.DEVICE_OUTPUTS_IDS}",
+                        "Must be a valid output name",
                     )
             else:
                 self.error(None, "Symbol must be a name")

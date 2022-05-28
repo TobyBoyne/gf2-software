@@ -15,5 +15,5 @@ CONNECT SW1 -> G1.I1,
         G3 -> G4.I1,
         G4 -> G3.I2;
 
-MONITOR G3, / Q(t) /
-        G4; / Q(t)' /
+MONITOR G3, / Q /
+        G4; / Qbar /

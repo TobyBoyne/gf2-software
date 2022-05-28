@@ -10,7 +10,6 @@ Symbol - encapsulates a symbol and stores its properties.
 """
 
 
-from lib2to3.pgen2.token import NUMBER
 from os import PathLike
 from typing import TYPE_CHECKING, Union
 
@@ -35,6 +34,11 @@ class Symbol:
         """Initialise symbol properties."""
         self.type = None
         self.id = None
+        self.cursor_line = 0
+        self.curson_column = 0
+
+    def __repr__(self):
+        return f"S(type={self.type}, id={self.id})"
 
 
 class Scanner:
@@ -69,14 +73,17 @@ class Scanner:
         COMMA,
         SEMICOLON,
         COLON,
+        DOT,
+        SLASH,
         KEYWORD,
         NUMBER,
         NAME,
         ARROW,
         EOF,
-    ] = range(8)
+        *_,
+    ] = range(50)
 
-    KEYWORDS_LIST = ["DEVICES", "CONNECT", "MONITOR"]
+    KEYWORDS_LIST = ["DEVICE", "CONNECT", "MONITOR", "INPUTS"]
 
     def __init__(self, path: Union[str, PathLike], names: "Names"):
         """Open specified file and initialise reserved words and IDs."""
@@ -84,14 +91,26 @@ class Scanner:
         self.names = names
         self.file = open(path, "r")
 
-        # [self.DEVICES_ID, self.CONNECT_ID,
-        #     self.MONITOR_ID] = self.names.lookup(Scanner.KEYWORDS_LIST)
-        self.cur: str = ""  # current character
+        [
+            self.DEVICE_ID,
+            self.CONNECT_ID,
+            self.MONITOR_ID,
+            self.INPUTS_ID,
+        ] = names.lookup(self.KEYWORDS_LIST)
+
+        self.cur = None  # current character
+
+        self.cursor_line = 0
+        self.cursor_column = 0
+
+    def advance(self):
+        self.cursor_column += 1
+        self.cur = self.file.read(1)
 
     def get_symbol(self):
         """Translate the next sequence of characters into a symbol."""
         symbol = Symbol()
-        self.get_next_character()
+        self.get_next_non_whitespace()
 
         # name
         if self.cur.isalpha():
@@ -113,41 +132,66 @@ class Scanner:
             self.advance()
             if self.cur == ">":
                 symbol.type = Scanner.ARROW
-                self.advance()
             else:
                 print("Dash must be followed by an arrow")
 
         elif self.cur == ",":
             symbol.type = Scanner.COMMA
-            self.advance()
 
         elif self.cur == ":":
             symbol.type = Scanner.COLON
-            self.advance()
 
         elif self.cur == ";":
             symbol.type = Scanner.SEMICOLON
-            self.advance()
+
+        elif self.cur == "/":
+            symbol.type = Scanner.SLASH
+
+        elif self.cur == ".":
+            symbol.type = Scanner.DOT
 
         # eof
         elif self.cur == "":
             symbol.type = Scanner.EOF
 
         else:
-            print("Not a valid symbol.")
+            print(f"{self.cur} is not a valid symbol.")
+
+        if symbol.type in (
+            None,
+            Scanner.COMMA,
+            Scanner.COLON,
+            Scanner.SEMICOLON,
+            Scanner.ARROW,
+            Scanner.SLASH,
+            Scanner.DOT,
+        ):
             self.advance()
 
         return symbol
 
     def get_next_non_whitespace(self) -> None:
         """Returns the next non-whitespace character in the file"""
-        while self.cur.isspace():
-            self.cur = self.file.read(1)
+        while self.cur is None or self.cur.isspace():
+            self.advance()
+            if self.cur == "\n":
+                self.cursor_column = 0
+                self.cursor_line += 1
 
     def get_name(self) -> str:
         """Starting at a letter, return a name given by a sequence of
         alphanumeric characters"""
         name_string = ""
-        while self.cur.isalpha():
+        while self.cur.isalnum():
             name_string += self.cur
+            self.advance()
         return name_string
+
+    def get_number(self) -> int:
+        """Starting at a digit, return a number given by a sequence of
+        numeric characters"""
+        num_string = ""
+        while self.cur.isdigit():
+            num_string += self.cur
+            self.advance()
+        return int(num_string)
