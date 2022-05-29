@@ -127,9 +127,9 @@ def names_added(name_list):
 #print(er)
 #ids = name.lookup(["Toby", "Thomas", "Ieronymos", "TikTok", "Bob", "\n   \t  ",1])
 #print(ids)#
-x = name.get_name_string(3)
-print(x)
-z = name.lookup(["Tiktok",2,3,'Bob'])
-print(z)
-i = name.query("Thomas")
-print(i) # 1
+#x = name.get_name_string(3)
+#print(x)
+#z = name.lookup(["Tiktok",2,3,'Bob'])
+#print(z)
+#i = name.query("Thomas")
+#print(i) # 1
