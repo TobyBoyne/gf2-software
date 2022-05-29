@@ -56,12 +56,12 @@ class Names:
 
         If the name string is not present in the names list, return None.
         """
-        
+
         #if name_string in self.names:
         #    return self.names.index(name_string)
         #else:
         #    return None
-        
+
         #check if name is string
         if isinstance(name_string,str):
             if name_string in self.names:
@@ -103,10 +103,10 @@ class Names:
                 return self.names[name_id] #return name corresponding to id
             else:
                 return None
-            
+
         elif name_id < 0:
             raise AssertionError('Negative-integers are not allowed!')
-            
+
 """
 def name_list():
     return ["Toby", "Thomas", "Ieronymos", "TikTok", "Bob", "\n   \t  "]
@@ -119,16 +119,16 @@ def names_added(name_list):
 """
 
 
-name = Names()
+#name = Names()
 #z=name.get_name_string('andreas')
 #print(z) #none
-er = name.unique_error_codes(3)
-er = name.unique_error_codes(2)
-print(er)
-ids = name.lookup(["Toby", "Thomas", "Ieronymos", "TikTok", "Bob", "\n   \t  ",1])
-print(ids)
-x = name.get_name_string(3) 
-print(x) 
+#er = name.unique_error_codes(3)
+#er = name.unique_error_codes(2)
+#print(er)
+#ids = name.lookup(["Toby", "Thomas", "Ieronymos", "TikTok", "Bob", "\n   \t  ",1])
+#print(ids)#
+x = name.get_name_string(3)
+print(x)
 z = name.lookup(["Tiktok",2,3,'Bob'])
 print(z)
 i = name.query("Thomas")
