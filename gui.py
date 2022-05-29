@@ -8,22 +8,23 @@ Classes:
 MyGLCanvas - handles all canvas drawing operations.
 Gui - configures the main window and all the widgets.
 """
-from fileinput import filename
 import sys
+from fileinput import filename
+
+import numpy as np
 import wx
 import wx.glcanvas as wxcanvas
-from OpenGL import GL, GLUT
-
-from names import Names
-from devices import Devices
-from network import Network
-from monitors import Monitors
-from scanner import Scanner
-from parse import Parser
-
 from matplotlib import colors
-import numpy as np
+from OpenGL import GL, GLUT
 from PIL import Image
+
+from devices import Devices
+from monitors import Monitors
+from names import Names
+from network import Network
+from parse import Parser
+from scanner import Scanner
+
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -55,10 +56,17 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
     def __init__(self, parent, devices, monitors):
         """Initialise canvas properties and useful variables."""
-        super().__init__(parent, -1,
-                         attribList=[wxcanvas.WX_GL_RGBA,
-                                     wxcanvas.WX_GL_DOUBLEBUFFER,
-                                     wxcanvas.WX_GL_DEPTH_SIZE, 16, 0])
+        super().__init__(
+            parent,
+            -1,
+            attribList=[
+                wxcanvas.WX_GL_RGBA,
+                wxcanvas.WX_GL_DOUBLEBUFFER,
+                wxcanvas.WX_GL_DEPTH_SIZE,
+                16,
+                0,
+            ],
+        )
         GLUT.glutInit()
         self.init = False
         self.context = wxcanvas.GLContext(self)
@@ -144,7 +152,9 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             # Configure the viewport, modelview and projection matrices
             self.init_gl()
             self.init = True
-        if self.monitorsshow:                                           # FIXME I don't know if this is broken or not but if it's buggy check this first
+        if (
+            self.monitorsshow
+        ):  # FIXME I don't know if this is broken or not but if it's buggy check this first
             self.render_monitors(0, 0)
         else:
             self.render("Monitor traces will appear after the circuit is run")
@@ -172,15 +182,13 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.last_mouse_y = event.GetY()
             self.init = False
         if event.GetWheelRotation() < 0:
-            self.zoom *= (1.0 + (
-                event.GetWheelRotation() / (20 * event.GetWheelDelta())))
+            self.zoom *= 1.0 + (event.GetWheelRotation() / (20 * event.GetWheelDelta()))
             # Adjust pan so as to zoom around the mouse position
             self.pan_x -= (self.zoom - old_zoom) * ox
             self.pan_y -= (self.zoom - old_zoom) * oy
             self.init = False
         if event.GetWheelRotation() > 0:
-            self.zoom /= (1.0 - (
-                event.GetWheelRotation() / (20 * event.GetWheelDelta())))
+            self.zoom /= 1.0 - (event.GetWheelRotation() / (20 * event.GetWheelDelta()))
             # Adjust pan so as to zoom around the mouse position
             self.pan_x -= (self.zoom - old_zoom) * ox
             self.pan_y -= (self.zoom - old_zoom) * oy
@@ -193,16 +201,18 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         GL.glColor3f(*self.textcolour)  # text is black
         GL.glRasterPos2f(x_pos, y_pos)
         self.fontsize = 12
-        font = GLUT.GLUT_BITMAP_HELVETICA_12                    # TODO font options?
+        font = GLUT.GLUT_BITMAP_HELVETICA_12  # TODO font options?
 
         for character in text:
-            if character == '\n':
+            if character == "\n":
                 y_pos = y_pos - 20
                 GL.glRasterPos2f(x_pos, y_pos)
             else:
                 GLUT.glutBitmapCharacter(font, ord(character))
 
-    def render_monitors(self, x_pos, y_pos):                    # TODO test this, need some other stuff working first
+    def render_monitors(
+        self, x_pos, y_pos
+    ):  # TODO test this, need some other stuff working first
         "Render the monitor traces."
         self.SetCurrent(self.context)
         if not self.init:
@@ -218,60 +228,74 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         margin = self.monitors.get_margin()
 
         # Create list of colours to draw from later
-        hsv_colourbank =   [np.linspace(0, 1, no_monitors), 
-                            np.zeros(no_monitors), 
-                            np.zeros(no_monitors)]
+        hsv_colourbank = [
+            np.linspace(0, 1, no_monitors),
+            np.zeros(no_monitors),
+            np.zeros(no_monitors),
+        ]
         rgb_colourbank = colors.hsv_to_rgb(hsv_colourbank)
-        
+
         # Draw
         index = 0
         for device_id, output_id in self.monitors.monitors_dictionary:
-            
+
             monitor_name = self.devices.get_signal_name(device_id, output_id)
             signal_list = self.monitors.monitors_dictionary[(device_id, output_id)]
 
             # Names
-            y = y_pos+index*(self.monitorheight+self.monitorspacing)
+            y = y_pos + index * (self.monitorheight + self.monitorspacing)
             self.render_text(monitor_name, x_pos, y)
-            
+
             # Traces
             GL.glColor3f(rgb_colourbank[index])
             index += 1
             GL.glBegin(GL.GL_LINE_STRIP)
-            x = x_pos + self.fontsize*0.6*margin
-            
+            x = x_pos + self.fontsize * 0.6 * margin
+
             for signal in signal_list:
                 x_last = x
                 if signal == self.devices.HIGH:
-                    y = y_pos + (index + 1) * self.monitorheight + index * self.monitorspacing # This shouldn't be necessary, just here for robustness
+                    y = (
+                        y_pos
+                        + (index + 1) * self.monitorheight
+                        + index * self.monitorspacing
+                    )  # This shouldn't be necessary, just here for robustness
                     x += self.monitorstep
                 if signal == self.devices.LOW:
-                    y = y_pos+index*(self.monitorheight+self.monitorspacing) # This shouldn't be necessary, just here for robustness
+                    y = y_pos + index * (
+                        self.monitorheight + self.monitorspacing
+                    )  # This shouldn't be necessary, just here for robustness
                     x += self.monitorstep
                 if signal == self.devices.RISING:
-                    y = y_pos+index*(self.monitorheight+self.monitorspacing) # This shouldn't be necessary, just here for robustness
-                    x += self.monitorstep/3 
+                    y = y_pos + index * (
+                        self.monitorheight + self.monitorspacing
+                    )  # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep / 3
                     GL.glVertex2f(x, y)
                     GL.glVertex2f(x_last, y)
                     x_last = x
-                    x += self.monitorstep/3
-                    GL.glVertex2f(x, y+self.monitorheight)
+                    x += self.monitorstep / 3
+                    GL.glVertex2f(x, y + self.monitorheight)
                     GL.glVertex2f(x_last, y)
                     y += self.monitorheight
                     x_last = x
-                    x += self.monitorstep/3
+                    x += self.monitorstep / 3
                 if signal == self.devices.FALLING:
-                    y = y_pos + (index + 1) * self.monitorheight + index * self.monitorspacing # This shouldn't be necessary, just here for robustness
-                    x += self.monitorstep/3
+                    y = (
+                        y_pos
+                        + (index + 1) * self.monitorheight
+                        + index * self.monitorspacing
+                    )  # This shouldn't be necessary, just here for robustness
+                    x += self.monitorstep / 3
                     GL.glVertex2f(x, y)
                     GL.glVertex2f(x_last, y)
                     x_last = x
-                    x += self.monitorstep/3
-                    GL.glVertex2f(x, y-self.monitorheight)
+                    x += self.monitorstep / 3
+                    GL.glVertex2f(x, y - self.monitorheight)
                     GL.glVertex2f(x_last, y)
                     y -= self.monitorheight
                     x_last = x
-                    x += self.monitorstep/3
+                    x += self.monitorstep / 3
                 if signal == self.devices.BLANK:
                     # Skips one step ahead without drawing a line between, might leave a dot?
                     x += self.monitorstep
@@ -285,31 +309,37 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         # and swap the back buffer to the front
         GL.glFlush()
         self.SwapBuffers()
-    
+
     def toggledarkmode(self):
         if self.textcolour == (0.0, 0.0, 0.0):
             # Now switching to dark mode
-            self.textcolour = (1.0, 1.0, 1.0)   # Text is now white
-            GL.glClearColor(0.1, 0.1, 0.1, 0.0) # Background is dark grey
+            self.textcolour = (1.0, 1.0, 1.0)  # Text is now white
+            GL.glClearColor(0.1, 0.1, 0.1, 0.0)  # Background is dark grey
         else:
             # Now switching to light mode
-            self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
-            GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
+            self.textcolour = (0.0, 0.0, 0.0)  # Text is now black
+            GL.glClearColor(1.0, 1.0, 1.0, 0.0)  # Background is white
 
     def save_image(self, filepath):
         # Check the filepath is correct
         if "." in filepath:
             dot_index = filepath.find(".")
-            post_dot = filepath[dot_index+1:]
+            post_dot = filepath[dot_index + 1 :]
             if post_dot not in ["png", "jpg", "jpeg"]:
                 print(post_dot)
-                print("There might be an issue with the file extension you have provided.")
+                print(
+                    "There might be an issue with the file extension you have provided."
+                )
         else:
             filepath += ".jpg"
         # Creates image from buffer info
         size = self.GetClientSize()
-        img_pixels = GL.glReadPixels(0, 0, size.width, size.height, GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
-        image = Image.frombytes("RGB", (size.width, size.height), img_pixels).transpose(Image.FLIP_TOP_BOTTOM)
+        img_pixels = GL.glReadPixels(
+            0, 0, size.width, size.height, GL.GL_RGB, GL.GL_UNSIGNED_BYTE
+        )
+        image = Image.frombytes("RGB", (size.width, size.height), img_pixels).transpose(
+            Image.FLIP_TOP_BOTTOM
+        )
 
         image.save(filepath)
 
@@ -348,12 +378,14 @@ class Gui(wx.Frame):
 
         # Set the background and text colours (default is light mode)
         self.lightmode = True
-        self.textcolour = wx.Colour(0, 0, 0) # Black text
-        self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
-        self.windowcolour = wx.Colour(255, 255, 255) # White windows
+        self.textcolour = wx.Colour(0, 0, 0)  # Black text
+        self.SetBackgroundColour(
+            wx.Colour(220, 220, 220)
+        )  # Background colour is light grey
+        self.windowcolour = wx.Colour(255, 255, 255)  # White windows
 
         # Variables for reading from the input text box
-        self.character = "" # current character
+        self.character = ""  # current character
         self.cursor = 0  # cursor position
 
         ## MENU BAR ##
@@ -361,52 +393,50 @@ class Gui(wx.Frame):
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&About")
-        fileMenu.Append(wx.ID_FILE, "&Show Description")      
-        fileMenu.Append(wx.ID_SAVE, "&Save Monitor Graphs")        
+        fileMenu.Append(wx.ID_FILE, "&Show Description")
+        fileMenu.Append(wx.ID_SAVE, "&Save Monitor Graphs")
         fileMenu.Append(wx.ID_EXIT, "&Exit")
         menuBar.Append(fileMenu, "&File")
 
         # Help Menu
         helpMenu = wx.Menu()
-        helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")           
+        helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")
         menuBar.Append(helpMenu, "&Help")
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Toggle Dark Mode")    
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Toggle Dark Mode")
         menuBar.Append(settingsMenu, "&Settings")
-        
-        self.SetMenuBar(menuBar)
 
+        self.SetMenuBar(menuBar)
 
         # Canvas for drawing signals
         self.canvas = MyGLCanvas(self, devices, monitors)
 
         # Log Box
-        self.logstyle = wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL
-        self.log = wx.TextCtrl(self, 
-                                wx.ID_ANY, 
-                                size=(350,300),
-                                style=self.logstyle)
+        self.logstyle = wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL
+        self.log = wx.TextCtrl(self, wx.ID_ANY, size=(350, 300), style=self.logstyle)
         self.log.SetBackgroundColour(self.windowcolour)
-        sys.stdout=self.log
+        sys.stdout = self.log
         self.input_title = wx.StaticText(self, wx.ID_ANY, "Command Input")
-        self.text_input = wx.TextCtrl(self, wx.ID_ANY, "",
-                                    style=wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
+        self.text_input = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
+        )
         self.text_input.SetBackgroundColour(self.windowcolour)
-
 
         # Configure the widgets
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
         self.spin.SetBackgroundColour(self.windowcolour)
-        self.run_button = wx.Button(self, wx.ID_ANY, "Run")         
-        self.run_button.SetBackgroundColour(self.windowcolour)         
+        self.run_button = wx.Button(self, wx.ID_ANY, "Run")
+        self.run_button.SetBackgroundColour(self.windowcolour)
         self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches")
 
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
-            self.switch_list = self.devices.find_devices(self.devices.SWITCH) # Gets all the switches
+            self.switch_list = self.devices.find_devices(
+                self.devices.SWITCH
+            )  # Gets all the switches
             self.switch_list_ids = []
             for switch in self.switch_list:
                 switch_id = switch.device_id
@@ -414,31 +444,51 @@ class Gui(wx.Frame):
         except AttributeError:
             print("An error occured while loading the switches")
             self.switch_list = [1, 2, 3]
-            self.switch_list_ids = ["Placeholder", "Switch", "Names", "sssssssssssssssssssssssssssss"]       # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
-        self.switch_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.switch_list_ids, name="Toggle Switches", style = wx.HSCROLL)
+            self.switch_list_ids = [
+                "Placeholder",
+                "Switch",
+                "Names",
+                "sssssssssssssssssssssssssssss",
+            ]  # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
+        self.switch_toggles = wx.CheckListBox(
+            self,
+            wx.ID_ANY,
+            choices=self.switch_list_ids,
+            name="Toggle Switches",
+            style=wx.HSCROLL,
+        )
         for switch in range(len(self.switch_list)):
             try:
-                if self.switch_list(switch).switch_state == 1: 
+                if self.switch_list(switch).switch_state == 1:
                     self.switch_toggles.Check(switch)
-            except TypeError or AttributeError:                               # I guessed the errors and it worked, this might cause issues later
+            except TypeError or AttributeError:  # I guessed the errors and it worked, this might cause issues later
                 self.switch_toggles.SetCheckedItems([0, 2])
 
         # Repeat the above for monitor trace toggling
         self.monitor_title = wx.StaticText(self, wx.ID_ANY, "Toggle Monitors")
         try:
-            self.monitored_list, self.unmonitored_list = self.monitors.get_signal_names() # Gets the monitored and unmonitored signals
+            (
+                self.monitored_list,
+                self.unmonitored_list,
+            ) = (
+                self.monitors.get_signal_names()
+            )  # Gets the monitored and unmonitored signals
         except AttributeError:
             print("An error occured while loading the monitors")
             self.monitored_list = ["Placeholder_On"]
             self.unmonitored_list = ["Off1", "Off2", "Off4"]
         self.all_monitors = self.monitored_list + self.unmonitored_list
-        self.monitor_toggles = wx.CheckListBox(self, wx.ID_ANY, choices=self.all_monitors, name="Monitor Toggles", style = wx.HSCROLL)
+        self.monitor_toggles = wx.CheckListBox(
+            self,
+            wx.ID_ANY,
+            choices=self.all_monitors,
+            name="Monitor Toggles",
+            style=wx.HSCROLL,
+        )
         if len(self.monitored_list) == 1:
             self.monitor_toggles.Check(0)
         elif len(self.monitored_list) > 1:
-            for monitor in range(len(self.monitored_list)): # Only the active monitors
-                self.monitor_toggles.SetCheckedItems(monitor)
-            
+            self.monitor_toggles.SetCheckedItems(range(len(self.monitored_list)))
 
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
@@ -479,11 +529,11 @@ class Gui(wx.Frame):
         self.monitor_toggles.SetMaxSize(wx.Size(120, 500))
         self.switch_toggles.SetMinSize(wx.Size(120, 100))
         self.monitor_toggles.SetMinSize(wx.Size(120, 100))
-        
+
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
 
-    def on_menu(self, event):                                                      
+    def on_menu(self, event):
         """Handle the event when the user selects a menu item."""
         Id = event.GetId()
 
@@ -491,48 +541,65 @@ class Gui(wx.Frame):
         if Id == wx.ID_EXIT:
             self.Close(True)
         if Id == wx.ID_ABOUT:
-            wx.MessageBox("Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
-                          "Group 19 \\ im475 --- tjad2  --- tjb94\n 2022",
-                          "About Logsim", wx.ICON_INFORMATION | wx.OK)
+            wx.MessageBox(
+                "Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
+                "Group 19 \\ im475 --- tjad2  --- tjb94\n 2022",
+                "About Logsim",
+                wx.ICON_INFORMATION | wx.OK,
+            )
         if Id == wx.ID_SAVE:
-            ask = wx.TextEntryDialog(self, "Please input the filepath you would like to save the image to\nThe default extension is .jpg")
+            ask = wx.TextEntryDialog(
+                self,
+                "Please input the filepath you would like to save the image to\nThe default extension is .jpg",
+            )
             if ask.ShowModal():
                 image_name = ask.GetValue()
                 self.canvas.save_image(image_name)
         if Id == wx.ID_FILE:
             file = open(self.path, "r")
             filetxt = file.read()
-            resp = wx.MessageBox("".join([filetxt, "\n\n---------------------\nPrint this in GUI log?"]), "Description File", wx.ICON_INFORMATION | wx.YES | wx.NO)
+            resp = wx.MessageBox(
+                "".join([filetxt, "\n\n---------------------\nPrint this in GUI log?"]),
+                "Description File",
+                wx.ICON_INFORMATION | wx.YES | wx.NO,
+            )
             if resp == wx.YES:
                 print(filetxt)
 
         # Help Tab
         if Id == wx.ID_HELP_COMMANDS:
-            wx.MessageBox("User commands:"
-                        "\nr N       - run the simulation for N cycles"
-                        "\nc N       - continue the simulation for N cycles"
-                        "\ns X N     - set switch X to N (0 or 1)"
-                        "\nm X       - set a monitor on signal X"
-                        "\nz X       - zap the monitor on signal X"
-                        "\nh         - help (this command)"
-                        "\nq         - quit the program",
-                            "Command Help", wx.ICON_INFORMATION | wx.OK)
+            wx.MessageBox(
+                "User commands:"
+                "\nr N       - run the simulation for N cycles"
+                "\nc N       - continue the simulation for N cycles"
+                "\ns X N     - set switch X to N (0 or 1)"
+                "\nm X       - set a monitor on signal X"
+                "\nz X       - zap the monitor on signal X"
+                "\nh         - help (this command)"
+                "\nq         - quit the program",
+                "Command Help",
+                wx.ICON_INFORMATION | wx.OK,
+            )
 
         # Settings Tab
         if Id == wx.ID_SELECT_COLOR:
             # Switch colours for everything
-            self.canvas.toggledarkmode()        
+            self.canvas.toggledarkmode()
             if self.lightmode:
                 # Change to dark mode
-                self.textcolour = wx.Colour(255, 255, 255) # White text
-                self.SetBackgroundColour(wx.Colour(0, 0, 0)) # Background colour is black
-                self.windowcolour = wx.Colour(20, 20, 20) # Dark Grey windows
+                self.textcolour = wx.Colour(255, 255, 255)  # White text
+                self.SetBackgroundColour(
+                    wx.Colour(0, 0, 0)
+                )  # Background colour is black
+                self.windowcolour = wx.Colour(20, 20, 20)  # Dark Grey windows
                 self.lightmode = False
             else:
                 # Change to light mode
-                self.textcolour = wx.Colour(0, 0, 0) # Black text
-                self.SetBackgroundColour(wx.Colour(220, 220, 220)) # Background colour is light grey
-                self.windowcolour = wx.Colour(255, 255, 255) # White windows
+                self.textcolour = wx.Colour(0, 0, 0)  # Black text
+                self.SetBackgroundColour(
+                    wx.Colour(220, 220, 220)
+                )  # Background colour is light grey
+                self.windowcolour = wx.Colour(255, 255, 255)  # White windows
                 self.lightmode = True
             # Trigger updates for background to recolour
             self.Refresh()
@@ -546,7 +613,9 @@ class Gui(wx.Frame):
             self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
-            self.text.SetForegroundColour(self.textcolour)                  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
+            self.text.SetForegroundColour(
+                self.textcolour
+            )  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
             self.switch_title.SetForegroundColour(self.textcolour)
             self.monitor_title.SetForegroundColour(self.textcolour)
             self.switch_toggles.SetBackgroundColour(self.windowcolour)
@@ -558,32 +627,43 @@ class Gui(wx.Frame):
                 self.monitor_toggles.SetItemBackgroundColour(monitor, self.windowcolour)
                 self.monitor_toggles.SetItemForegroundColour(monitor, self.textcolour)
 
-
     ## Sidebar events ##
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""
         spin_value = self.spin.GetValue()
         print("".join(["New spin control value: ", str(spin_value)]))
-        
+
     def on_run_button(self, event):
         """Handle the event when the user clicks the run button."""
         print("Run button pressed.")
         self.run_command(self.spin.GetValue())
 
-    def on_switch_check(self, event):                                               # TODO test me
+    def on_switch_check(self, event):  # TODO test me
         """Handle the event when the user clicks one of the switch checkboxes"""
         switch_index = event.GetInt()
         switch = self.switch_list[switch_index]
         switch_name = switch.device_id
         switch_before = switch.switch_state
         switch_after = 1 - switch_before
-        print("".join([str(switch_name), " has been changed from ", str(switch_before), " to ", str(switch_after)]))
+        print(
+            "".join(
+                [
+                    str(switch_name),
+                    " has been changed from ",
+                    str(switch_before),
+                    " to ",
+                    str(switch_after),
+                ]
+            )
+        )
         if self.devices.set_switch(switch_name, switch_after):
             print("Successfully set switch.")
         else:
             print("Error! Invalid switch.")
 
-    def on_monitor_check(self, event):                                       # TODO test this too, uses same design as on_switch_check above
+    def on_monitor_check(
+        self, event
+    ):  # TODO test this too, uses same design as on_switch_check above
         """Handle the event when the user clicks on one of the monitor checkboxes"""
         monitor_index = event.GetInt()
         monitor_name = self.all_monitors[monitor_index]
@@ -597,22 +677,19 @@ class Gui(wx.Frame):
                 print("Error! Invalid monitor.")
         elif monitor_name in self.unmonitored_list:
             print("".join(["The signal ", monitor_name, " is now being monitored"]))
-            if self.monitors.make_monitor(device, port,
-                                        self.cycles_completed):
+            if self.monitors.make_monitor(device, port, self.cycles_completed):
                 print("Monitor added successfully.")
-            else: 
+            else:
                 print("Error! Invalid monitor.")
         else:
-            print("Something has gone wrong: the monitor list doesn't seem to be reading correctly.") # This really shouldn't ever happen
-            
-
-
-
+            print(
+                "Something has gone wrong: the monitor list doesn't seem to be reading correctly."
+            )  # This really shouldn't ever happen
 
     ## Text command events ##
     def on_text_input(self, event):
         """Handle the event when the user enters text."""
-        self.cursor = 0 # lets it read more than just the first input by resetting the cursor each time
+        self.cursor = 0  # lets it read more than just the first input by resetting the cursor each time
         self.text_input_value = self.text_input.GetValue()
         print(self.text_input_value)
         # Add integration with userint.py for running commands from the text box
@@ -639,7 +716,9 @@ class Gui(wx.Frame):
             pass
 
         # Reset text_input to be empty
-        self.text_input.SetValue("") # FIXME Might create a problem with whitespace being added to the input box
+        self.text_input.SetValue(
+            ""
+        )  # FIXME Might create a problem with whitespace being added to the input box
 
     ## userint.py functions for the command line input
     def read_command(self):
@@ -731,7 +810,6 @@ class Gui(wx.Frame):
 
         return number
 
-
     def help_command(self):
         """Print a list of valid commands."""
         print("User commands:")
@@ -759,8 +837,9 @@ class Gui(wx.Frame):
         monitor = self.read_signal_name()
         if monitor is not None:
             [device, port] = monitor
-            monitor_error = self.monitors.make_monitor(device, port,
-                                                       self.cycles_completed)
+            monitor_error = self.monitors.make_monitor(
+                device, port, self.cycles_completed
+            )
             if monitor_error == self.monitors.NO_ERROR:
                 print("Successfully made monitor.")
             else:
@@ -814,9 +893,18 @@ class Gui(wx.Frame):
                 print("Error! Nothing to continue. Run first.")
             elif self.run_network(cycles):
                 self.cycles_completed += cycles
-                print(" ".join(["Continuing for", str(cycles), "cycles.",
-                                "Total:", str(self.cycles_completed)]))
+                print(
+                    " ".join(
+                        [
+                            "Continuing for",
+                            str(cycles),
+                            "cycles.",
+                            "Total:",
+                            str(self.cycles_completed),
+                        ]
+                    )
+                )
 
 
-#TODO Open a file browser to select definition file
-#TODO Allow comments to be added at the end of the definition file?
+# TODO Open a file browser to select definition file
+# TODO Allow comments to be added at the end of the definition file?

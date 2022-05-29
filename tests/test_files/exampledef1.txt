@@ -2,8 +2,8 @@ DEVICE  G1: AND 2 INPUTS,
         G2: AND 2 INPUTS, 
         G3: NOR 2 INPUTS,
         G4: NOR 2 INPUTS,
-        SW1: SWITCH 0, / R /
-        SW2: SWITCH 1, / S / 
+        SW1: SWITCH 0, / S /
+        SW2: SWITCH 1, / R / 
         CLK1: CLOCK 10;
 
 CONNECT SW1 -> G1.I1,
