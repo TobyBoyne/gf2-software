@@ -84,14 +84,15 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.zoom = 1
 
         # Initialise some drawing settings                                          # TODO make a Settings option to change these (change values->clear canvas->redraw canvas)
-        self.monitorheight = 30
-        self.monitorspacing = 5
+        self.monitorheight = 20
+        self.monitorspacing = 15
         self.monitorstep = 30
 
         # Initialise in light-mode
-        self.textcolour = (0.0, 0.0, 0.0)  # Light mode text colour is black
+        self.textcolour = (0.0, 0.0, 0.0)   # Light mode text colour is black
         self.SetCurrent(self.context)
-        GL.glClearColor(1.0, 1.0, 1.0, 0.0)
+        GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
+        self.gridcolour = (0.8, 0.8, 0.8)   # Lines are a very light grey
 
         # Bind events to the canvas
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -155,7 +156,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         if (
             self.monitorsshow
         ):  # FIXME I don't know if this is broken or not but if it's buggy check this first
-            self.render_monitors(0, 0)
+            self.render_monitors(30, 30)
         else:
             self.render("Monitor traces will appear after the circuit is run")
 
@@ -228,29 +229,38 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         margin = self.monitors.get_margin()
 
         # Create list of colours to draw from later
-        hsv_colourbank = [
-            np.linspace(0, 1, no_monitors),
-            np.zeros(no_monitors),
-            np.zeros(no_monitors),
-        ]
-        rgb_colourbank = colors.hsv_to_rgb(hsv_colourbank)
+        hsv_colourbank = np.ones((no_monitors, 3))
+        hsv_colourbank[:, 0] = np.linspace(0, 1-1/no_monitors, no_monitors)
 
-        # Draw
+        rgb_colourbank = 0*hsv_colourbank # need the rgb bank to be the same shape
+        for i in range(no_monitors):
+            rgb_colourbank[i, :] = colors.hsv_to_rgb(hsv_colourbank[i, :])
+
+        # Monitor Traces
         index = 0
         for device_id, output_id in self.monitors.monitors_dictionary:
 
             monitor_name = self.devices.get_signal_name(device_id, output_id)
             signal_list = self.monitors.monitors_dictionary[(device_id, output_id)]
 
-            # Names
+            # Colour
+            [r, g, b] = rgb_colourbank[index, :]
+
+            # Background Lines & Names
             y = y_pos + index * (self.monitorheight + self.monitorspacing)
+            x = x_pos + self.fontsize * margin # Can add in another multiplier here, depends on spacing between signal names and the traces
+            for line in range(len(signal_list)):
+                # Linecolour is always a middle-grey
+                GL.glColor3f(*self.gridcolour)
+                GL.glBegin(GL.GL_LINES)
+                GL.glVertex2f(x + line*self.monitorstep, y)
+                GL.glVertex2f(x + line*self.monitorstep, y + self.monitorheight + self.monitorspacing)
+                GL.glEnd()
             self.render_text(monitor_name, x_pos, y)
 
             # Traces
-            GL.glColor3f(rgb_colourbank[index])
-            index += 1
+            GL.glColor3f(r, g, b)
             GL.glBegin(GL.GL_LINE_STRIP)
-            x = x_pos + self.fontsize * 0.6 * margin
 
             for signal in signal_list:
                 x_last = x
@@ -271,12 +281,12 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                         self.monitorheight + self.monitorspacing
                     )  # This shouldn't be necessary, just here for robustness
                     x += self.monitorstep / 3
-                    GL.glVertex2f(x, y)
                     GL.glVertex2f(x_last, y)
+                    GL.glVertex2f(x, y)
                     x_last = x
                     x += self.monitorstep / 3
-                    GL.glVertex2f(x, y + self.monitorheight)
                     GL.glVertex2f(x_last, y)
+                    GL.glVertex2f(x, y + self.monitorheight)
                     y += self.monitorheight
                     x_last = x
                     x += self.monitorstep / 3
@@ -287,22 +297,23 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                         + index * self.monitorspacing
                     )  # This shouldn't be necessary, just here for robustness
                     x += self.monitorstep / 3
-                    GL.glVertex2f(x, y)
                     GL.glVertex2f(x_last, y)
+                    GL.glVertex2f(x, y)
                     x_last = x
                     x += self.monitorstep / 3
-                    GL.glVertex2f(x, y - self.monitorheight)
                     GL.glVertex2f(x_last, y)
+                    GL.glVertex2f(x, y - self.monitorheight)
                     y -= self.monitorheight
                     x_last = x
                     x += self.monitorstep / 3
+                GL.glVertex2f(x_last, y)
+                GL.glVertex2f(x, y)
                 if signal == self.devices.BLANK:
                     # Skips one step ahead without drawing a line between, might leave a dot?
                     x += self.monitorstep
                     x_last = x
-                GL.glVertex2f(x, y)
-                GL.glVertex2f(x_last, y)
 
+            index += 1
             GL.glEnd()
 
         # We have been drawing to the back buffer, flush the graphics pipeline
@@ -313,12 +324,14 @@ class MyGLCanvas(wxcanvas.GLCanvas):
     def toggledarkmode(self):
         if self.textcolour == (0.0, 0.0, 0.0):
             # Now switching to dark mode
-            self.textcolour = (1.0, 1.0, 1.0)  # Text is now white
-            GL.glClearColor(0.1, 0.1, 0.1, 0.0)  # Background is dark grey
+            self.textcolour = (1.0, 1.0, 1.0)   # Text is now white
+            GL.glClearColor(0.1, 0.1, 0.1, 0.0) # Background is dark grey
+            self.gridcolour = (0.2, 0.2, 0.2)   # Grid is now dark grey
         else:
             # Now switching to light mode
-            self.textcolour = (0.0, 0.0, 0.0)  # Text is now black
-            GL.glClearColor(1.0, 1.0, 1.0, 0.0)  # Background is white
+            self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
+            GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
+            self.gridcolour = (0.8, 0.8, 0.8)   # Grid is now light grey
 
     def save_image(self, filepath):
         # Check the filepath is correct
@@ -437,34 +450,39 @@ class Gui(wx.Frame):
 
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
-            self.switch_list = self.devices.find_devices(
+            self.switch_list_ids = self.devices.find_devices(
                 self.devices.SWITCH
             )  # Gets all the switches
-            self.switch_list_ids = []
-            for switch in self.switch_list:
-                switch_id = switch.device_id
-                self.switch_list_ids.append(switch_id)
+            self.switch_list_names = []
+            self.switch_list = []
+            for switch_id in self.switch_list_ids:
+                switch_name = self.names.get_name_string(switch_id)
+                self.switch_list_names.append(switch_name)
+                switch = self.devices.get_device(switch_id)
+                self.switch_list.append(switch)
         except AttributeError:
             print("An error occured while loading the switches")
-            self.switch_list = [1, 2, 3, 4]
-            self.switch_list_ids = [
+            self.switch_list_ids = [1, 2, 3]
+            self.switch_list = [1, 2, 3] # This should be a list of device objects, but that doesn't really work here
+            self.switch_list_names = [
                 "Placeholder",
                 "Switch",
                 "Names",
-                "sssssssssssssssssssssssssssss",
             ]  # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
         self.switch_toggles = wx.CheckListBox(
             self,
             wx.ID_ANY,
-            choices=self.switch_list_ids,
+            choices=self.switch_list_names,
             name="Toggle Switches",
             style=wx.HSCROLL,
         )
-        for switch in range(len(self.switch_list)):
+        for switch in range(len(self.switch_list_names)):
             try:
-                if self.switch_list(switch).switch_state == 1:
+                if self.switch_list[switch].switch_state == 1:
                     self.switch_toggles.Check(switch)
-            except TypeError or AttributeError:  # I guessed the errors and it worked, this might cause issues later
+                else:
+                    pass
+            except AttributeError:  # I guessed the errors and it worked, this might cause issues later
                 self.switch_toggles.SetCheckedItems([0, 2])
 
         # Repeat the above for monitor trace toggling
@@ -476,9 +494,6 @@ class Gui(wx.Frame):
             ) = (
                 self.monitors.get_signal_names()
             )  # Gets the monitored and unmonitored signals
-            print(self.monitored_list)
-            print(self.unmonitored_list)
-            print(self.monitors.monitors_dictionary)
         except AttributeError:
             print("An error occured while loading the monitors")
             self.monitored_list = ["Placeholder_On"]
@@ -648,7 +663,8 @@ class Gui(wx.Frame):
         """Handle the event when the user clicks one of the switch checkboxes"""
         switch_index = event.GetInt()
         switch = self.switch_list[switch_index]
-        switch_name = switch.device_id
+        switch_id = switch.device_id
+        switch_name = self.switch_list_names[switch_index]
         switch_before = switch.switch_state
         switch_after = 1 - switch_before
         print(
@@ -662,7 +678,7 @@ class Gui(wx.Frame):
                 ]
             )
         )
-        if self.devices.set_switch(switch_name, switch_after):
+        if self.devices.set_switch(switch_id, switch_after):
             print("Successfully set switch.")
         else:
             print("Error! Invalid switch.")
