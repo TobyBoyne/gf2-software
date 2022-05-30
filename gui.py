@@ -388,6 +388,9 @@ class Gui(wx.Frame):
         self.character = ""  # current character
         self.cursor = 0  # cursor position
 
+        # This is from the initialisation of userint.py and is required for lots of the simulation tasks
+        self.cycles_completed = 0  # number of simulation cycles completed
+
         ## MENU BAR ##
         # Configure the file menu
         fileMenu = wx.Menu()
@@ -443,7 +446,7 @@ class Gui(wx.Frame):
                 self.switch_list_ids.append(switch_id)
         except AttributeError:
             print("An error occured while loading the switches")
-            self.switch_list = [1, 2, 3]
+            self.switch_list = [1, 2, 3, 4]
             self.switch_list_ids = [
                 "Placeholder",
                 "Switch",
@@ -473,6 +476,9 @@ class Gui(wx.Frame):
             ) = (
                 self.monitors.get_signal_names()
             )  # Gets the monitored and unmonitored signals
+            print(self.monitored_list)
+            print(self.unmonitored_list)
+            print(self.monitors.monitors_dictionary)
         except AttributeError:
             print("An error occured while loading the monitors")
             self.monitored_list = ["Placeholder_On"]
@@ -668,23 +674,48 @@ class Gui(wx.Frame):
         monitor_index = event.GetInt()
         monitor_name = self.all_monitors[monitor_index]
         # Check if monitor was active or inactive before
-        [device, port] = monitor_name
+        [device, port] = self.id_from_name(monitor_name)
         if monitor_name in self.monitored_list:
             print("".join(["The signal ", monitor_name, " is no longer monitored"]))
-            if self.monitors.remove_monitor(device, port, self.cycles_completed):
+            if self.monitors.remove_monitor(device, port):
                 print("Monitor removed successfully.")
+                # Remove the monitor from the monitored list and add it to the unmonitored list
+                self.monitored_list.remove(monitor_name)
+                self.unmonitored_list.append(monitor_name)
             else:
                 print("Error! Invalid monitor.")
         elif monitor_name in self.unmonitored_list:
             print("".join(["The signal ", monitor_name, " is now being monitored"]))
-            if self.monitors.make_monitor(device, port, self.cycles_completed):
+            code = self.monitors.make_monitor(device, port, self.cycles_completed)
+            if  code == self.monitors.NO_ERROR:
                 print("Monitor added successfully.")
-            else:
-                print("Error! Invalid monitor.")
+                # Remove the monitor from the unmonitored list and add it to the monitored list
+                self.unmonitored_list.remove(monitor_name)
+                self.monitored_list.append(monitor_name)
+            elif code == self.monitors.NOT_OUTPUT:
+                print("Error! Invalid monitor output.")
+            elif code == self.network.DEVICE_ABSENT:
+                print("Error! Can't find the device to monitor.")
+            elif code == self.monitors.MONITOR_PRESENT:
+                print("Error! This signal is already monitored.")
         else:
             print(
                 "Something has gone wrong: the monitor list doesn't seem to be reading correctly."
             )  # This really shouldn't ever happen
+
+    # Get signal (& port) ids from their names
+    def id_from_name(self, name):
+        parts = name.split(".", 1)
+        if len(parts) == 1:
+            dev_name = parts[0]
+            dev_id = self.names.query(dev_name)
+            port_id = None
+        elif len(parts) == 2:
+            [dev_name, port_name] = parts
+            dev_id = self.names.query(dev_name)
+            port_id = self.names.query(port_name)
+        return [dev_id, port_id]
+
 
     ## Text command events ##
     def on_text_input(self, event):
