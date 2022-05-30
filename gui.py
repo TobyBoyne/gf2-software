@@ -280,32 +280,26 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                     y = y_pos + index * (
                         self.monitorheight + self.monitorspacing
                     )  # This shouldn't be necessary, just here for robustness
-                    x += self.monitorstep / 3
-                    GL.glVertex2f(x_last, y)
-                    GL.glVertex2f(x, y)
                     x_last = x
                     x += self.monitorstep / 3
                     GL.glVertex2f(x_last, y)
                     GL.glVertex2f(x, y + self.monitorheight)
                     y += self.monitorheight
                     x_last = x
-                    x += self.monitorstep / 3
+                    x += 2*self.monitorstep / 3
                 if signal == self.devices.FALLING:
                     y = (
                         y_pos
                         + (index + 1) * self.monitorheight
                         + index * self.monitorspacing
                     )  # This shouldn't be necessary, just here for robustness
-                    x += self.monitorstep / 3
-                    GL.glVertex2f(x_last, y)
-                    GL.glVertex2f(x, y)
                     x_last = x
                     x += self.monitorstep / 3
                     GL.glVertex2f(x_last, y)
                     GL.glVertex2f(x, y - self.monitorheight)
                     y -= self.monitorheight
                     x_last = x
-                    x += self.monitorstep / 3
+                    x += 2*self.monitorstep / 3
                 GL.glVertex2f(x_last, y)
                 GL.glVertex2f(x, y)
                 if signal == self.devices.BLANK:
@@ -446,7 +440,7 @@ class Gui(wx.Frame):
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")
         self.run_button.SetBackgroundColour(self.windowcolour)
-        self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches")
+        self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches\n☐=0, ☑=1")
 
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
         try:
@@ -486,7 +480,7 @@ class Gui(wx.Frame):
                 self.switch_toggles.SetCheckedItems([0, 2])
 
         # Repeat the above for monitor trace toggling
-        self.monitor_title = wx.StaticText(self, wx.ID_ANY, "Toggle Monitors")
+        self.monitor_title = wx.StaticText(self, wx.ID_ANY, "Toggle Monitors\n☐=off, ☑=on")
         try:
             (
                 self.monitored_list,
