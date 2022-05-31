@@ -55,8 +55,13 @@ class Parser:
         """Scans the next symbol, and assigns it to `self.symbol`"""
         self.symbol = self.scanner.get_symbol()
 
-    def error(self, errortype, errormessage):
-        self.errorlog(errortype, errormessage)
+    def error(self, errortype, errormessage, stopping_symbol=Scanner.COMMA):
+        self.errorlog(self.symbol, errortype, errormessage)
+
+        # skip current symbol, keep reading until a stopping symbol is reached
+        self.next_symbol()
+        while self.symbol.type != stopping_symbol:
+            self.next_symbol()
 
     def parse_network(self):
         """Parse the circuit definition file."""
@@ -87,9 +92,9 @@ class Parser:
                 self.next_symbol()
                 self.comment()
             else:
-                self.error(None, "Expected list to end in semicolon")
+                self.error(self.errorlog.PUNCTUATION, "Expected list to end in semicolon")
         else:
-            self.error(None, "Expected device list")
+            self.error(self.errorlog.MISSINGKEYWORD, "Expected device list")
 
     def connectionlist(self):
         if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
@@ -105,9 +110,9 @@ class Parser:
                 self.comment()
                 self.next_symbol()
             else:
-                self.error(None, "Expected list to end in semicolon")
+                self.error(self.errorlog.PUNCTUATION, "Expected list to end in semicolon")
         else:
-            self.error(None, "Expected connection list")
+            self.error(self.errorlog.MISSINGKEYWORD, "Expected connection list")
 
     def monitorlist(self):
         if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
@@ -123,9 +128,9 @@ class Parser:
                 self.comment()
                 self.next_symbol()
             else:
-                self.error(None, "Expected list to end in semicolon")
+                self.error(self.errorlog.PUNCTUATION, "Expected list to end in semicolon")
         else:
-            self.error(None, "Expected monitor list")
+            self.error(self.errorlog.MISSINGKEYWORD, "Expected monitor list")
 
     # --- LIST ITEMS ---
 
@@ -143,7 +148,7 @@ class Parser:
                     device_property = self.symbol.id
                     self.next_symbol()
                 else:
-                    self.error(None, "Switch must be followed by 0 (off) or 1 (on)")
+                    self.error(self.errorlog.DEVICE, "Switch must be followed by 0 (off) or 1 (on)")
 
             elif (
                 self.symbol.type == Scanner.NAME
@@ -154,7 +159,7 @@ class Parser:
                     device_property = self.symbol.id
                     self.next_symbol()
                 else:
-                    self.error(None, "Clock must be followed by a number (N cycles)")
+                    self.error(self.errorlog.DEVICE, "Clock must be followed by a number (N cycles)")
 
             elif self.symbol.type == Scanner.NAME and self.symbol.id == self.devices.D_TYPE:
                 self.next_symbol()
@@ -175,14 +180,19 @@ class Parser:
                         self.next_symbol()
                     else:
                         self.error(
-                            None, "Number of inputs must be followed by keyword INPUTS"
+                            self.errorlog.MISSINGKEYWORD, "Number of inputs must be followed by keyword INPUTS"
                         )
             
             else:
                 self.error(None, "Expected a valid device name")
 
         else:
-            self.error(None, "Device definition requires a colon")
+            self.error(self.errorlog.PUNCTUATION, "Device definition requires a colon")
+
+        # check symantic errors
+        if device_kind in self.devices.gate_types and device_kind != self.devices.XOR:
+            if not 1 < device_property <= 16:
+                self.error(self.errorlog.OUTOFBOUNDS, "Number of inputs must be between 1 and 16 inclusive.")
 
         # create the device
         if self.errorlog.no_errors():
@@ -216,8 +226,10 @@ class Parser:
     def devicename(self):
         if self.symbol.type == Scanner.NAME:
             return self.symbol.id
+        elif self.symbol.type == Scanner.KEYWORD:
+            self.error(self.errorlog.KEYWORD, "Device name cannot be a keyword")
         else:
-            self.error(None, "Device name must be a valid alphanumeric identifier")
+            self.error(self.errorlog.NAME, "Device name must be a valid alphanumeric identifier")
 
     def inputname(self):
         device_id = self.devicename()
@@ -241,13 +253,13 @@ class Parser:
                         return device_id, in_port_id
 
                     else:
-                        self.error(None, "Must be a valid input")
+                        self.error(self.errorlog.NAME, "Must be a valid input")
             else:
                 self.error(
-                    None, "For an input, dot must be followed by an alphanumeric name"
+                    self.errorlog.NAME, "For an input, dot must be followed by an alphanumeric name"
                 )
         else:
-            self.error(None, "Not an input - must have a dot")
+            self.error(self.errorlog.PUNCTUATION, "Not an input - must have a dot")
 
     def outputname(self):
         device_id = self.devicename()
@@ -261,11 +273,11 @@ class Parser:
                     return device_id, out_port_id
                 else:
                     self.error(
-                        None,
+                        self.errorlog.NAME,
                         "Must be a valid output name",
                     )
             else:
-                self.error(None, "Symbol must be a name")
+                self.error(self.errorlog.NAME, "Symbol must be a name")
         else:
             return device_id, None
 
