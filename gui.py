@@ -402,20 +402,20 @@ class Gui(wx.Frame):
         # Configure the file menu
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
-        fileMenu.Append(wx.ID_ABOUT, "&About")
-        fileMenu.Append(wx.ID_FILE, "&Show Description")
-        fileMenu.Append(wx.ID_SAVE, "&Save Monitor Graphs")
-        fileMenu.Append(wx.ID_EXIT, "&Exit")
+        fileMenu.Append(wx.ID_ABOUT, "&? About")
+        fileMenu.Append(wx.ID_FILE, "&… Show Description\tCtrl+D")
+        fileMenu.Append(wx.ID_SAVE, "&💾 Save Monitor Graphs\tCtrl+S")
+        fileMenu.Append(wx.ID_EXIT, "&❌ Exit\tCtrl+Q")
         menuBar.Append(fileMenu, "&File")
 
         # Help Menu
         helpMenu = wx.Menu()
-        helpMenu.Append(wx.ID_HELP_COMMANDS, "&Commands")
+        helpMenu.Append(wx.ID_HELP_COMMANDS, "&! Commands\tCtrl+Shift+C")
         menuBar.Append(helpMenu, "&Help")
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&Toggle Dark Mode")
+        settingsMenu.Append(wx.ID_SELECT_COLOR, "&◑ Toggle Dark Mode\tCtrl+T")
         menuBar.Append(settingsMenu, "&Settings")
 
         self.SetMenuBar(menuBar)
