@@ -30,12 +30,12 @@ class Symbol:
     No public methods.
     """
 
-    def __init__(self):
+    def __init__(self, scanner: 'Scanner'):
         """Initialise symbol properties."""
         self.type = None
         self.id = None
-        self.cursor_line = 0
-        self.curson_column = 0
+        self.cursor_line = scanner.cursor_line
+        self.cursor_column = scanner.cursor_column
 
     def __repr__(self):
         return f"S(type={self.type}, id={self.id})"
@@ -100,8 +100,8 @@ class Scanner:
 
         self.cur = None  # current character
 
-        self.cursor_line = 0
-        self.cursor_column = 0
+        self.cursor_line = 1
+        self.cursor_column = 1
 
     def advance(self):
         self.cursor_column += 1
@@ -109,7 +109,7 @@ class Scanner:
 
     def get_symbol(self):
         """Translate the next sequence of characters into a symbol."""
-        symbol = Symbol()
+        symbol = Symbol(self)
         self.get_next_non_whitespace()
 
         # name
@@ -155,7 +155,9 @@ class Scanner:
             symbol.type = Scanner.EOF
 
         else:
-            print(f"{self.cur} is not a valid symbol.")
+            pass
+            # non-valid symbols are allowed in comments
+            # print(f"{self.cur} is not a valid symbol.")
 
         if symbol.type in (
             None,
