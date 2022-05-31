@@ -9,13 +9,13 @@ Classes
 Parser - parses the definition file and builds the logic network.
 """
 
-from pyparsing import Optional
+import errorlog
 from devices import Devices
-from errorlog import ErrorLog
+from monitors import Monitors
 from names import Names
 from network import Network
 from scanner import Scanner
-from monitors import Monitors
+
 
 class Parser:
 
@@ -42,12 +42,12 @@ class Parser:
 
     def __init__(self, names, devices, network, monitors, scanner):
         """Initialise constants."""
-        self.names: Names       = names
-        self.devices: Devices   = devices
-        self.network: Network   = network
+        self.names: Names = names
+        self.devices: Devices = devices
+        self.network: Network = network
         self.monitors: Monitors = monitors
-        self.scanner: Scanner   = scanner
-        self.errorlog = ErrorLog()  # can get the errorlog from the scanner object
+        self.scanner: Scanner = scanner
+        self.errorlog = errorlog.ErrorLog()
 
         self.symbol = None
 
@@ -55,171 +55,229 @@ class Parser:
         """Scans the next symbol, and assigns it to `self.symbol`"""
         self.symbol = self.scanner.get_symbol()
 
-    def error(self, errortype, errormessage, stopping_symbol=Scanner.COMMA):
-        self.errorlog(self.symbol, errortype, errormessage)
+    def error(
+        self,
+        err: errorlog.CustomException,
+        stopping_symbols=(Scanner.COMMA, Scanner.SEMICOLON),
+    ):
+        err.set_error_pos(self.symbol)
+        self.errorlog(err)
 
         # skip current symbol, keep reading until a stopping symbol is reached
         self.next_symbol()
-        while self.symbol.type != stopping_symbol:
+        while self.symbol.type not in stopping_symbols + (Scanner.EOF,):
             self.next_symbol()
 
     def parse_network(self):
-        """Parse the circuit definition file."""
-        # For now just return True, so that userint and gui can run in the
-        # skeleton code. When complete, should return False when there are
-        # errors in the circuit definition file.
+        """Parse the circuit definition file. Returns True if there are no
+        errors in the circuit definition file."""
         self.next_symbol()
 
         self.devicelist()
         self.connectionlist()
         self.monitorlist()
 
-        return True
+        return self.errorlog.no_errors()
 
     # --- LISTS ---
 
     def devicelist(self):
-        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
-            "DEVICE"
-        ):
-            self.next_symbol()
-            self.device()
-            while self.symbol.type == Scanner.COMMA:
+        try:
+            if (
+                self.symbol.type == Scanner.KEYWORD
+                and self.symbol.id == self.names.query("DEVICE")
+            ):
                 self.next_symbol()
-                self.comment()
                 self.device()
-            if self.symbol.type == Scanner.SEMICOLON:
-                self.next_symbol()
-                self.comment()
+                while self.symbol.type == Scanner.COMMA:
+                    self.next_symbol()
+                    self.comment()
+                    self.device()
+                if self.symbol.type == Scanner.SEMICOLON:
+                    self.next_symbol()
+                    self.comment()
+                else:
+                    raise errorlog.PunctuationError("Expected list to end in semicolon")
             else:
-                self.error(self.errorlog.PUNCTUATION, "Expected list to end in semicolon")
-        else:
-            self.error(self.errorlog.MISSINGKEYWORD, "Expected device list")
+                raise errorlog.MissingKeywordError("Expected device list")
+        except errorlog.CustomException as err:
+            self.error(err, stopping_symbols=(Scanner.SEMICOLON,))
 
     def connectionlist(self):
-        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
-            "CONNECT"
-        ):
-            self.next_symbol()
-            self.connection()
-            while self.symbol.type == Scanner.COMMA:
+        try:
+            if (
+                self.symbol.type == Scanner.KEYWORD
+                and self.symbol.id == self.names.query("CONNECT")
+            ):
                 self.next_symbol()
-                self.comment()
                 self.connection()
-            if self.symbol.type == Scanner.SEMICOLON:
-                self.comment()
-                self.next_symbol()
+                while self.symbol.type == Scanner.COMMA:
+                    self.next_symbol()
+                    self.comment()
+                    self.connection()
+                if self.symbol.type == Scanner.SEMICOLON:
+                    self.comment()
+                    self.next_symbol()
+                else:
+                    raise errorlog.PunctuationError("Expected list to end in semicolon")
             else:
-                self.error(self.errorlog.PUNCTUATION, "Expected list to end in semicolon")
-        else:
-            self.error(self.errorlog.MISSINGKEYWORD, "Expected connection list")
+                raise errorlog.MissingKeywordError("Expected connection list")
+        except errorlog.CustomException as err:
+            self.error(err, stopping_symbols=(Scanner.SEMICOLON,))
 
     def monitorlist(self):
-        if self.symbol.type == Scanner.KEYWORD and self.symbol.id == self.names.query(
-            "MONITOR"
-        ):
-            self.next_symbol()
-            self.monitor()
-            while self.symbol.type == Scanner.COMMA:
+        try:
+            if (
+                self.symbol.type == Scanner.KEYWORD
+                and self.symbol.id == self.names.query("MONITOR")
+            ):
                 self.next_symbol()
-                self.comment()
                 self.monitor()
-            if self.symbol.type == Scanner.SEMICOLON:
-                self.comment()
-                self.next_symbol()
+                while self.symbol.type == Scanner.COMMA:
+                    self.next_symbol()
+                    self.comment()
+                    self.monitor()
+                if self.symbol.type == Scanner.SEMICOLON:
+                    self.comment()
+                    self.next_symbol()
+                else:
+                    raise (
+                        errorlog.PunctuationError("Expected list to end in semicolon")
+                    )
             else:
-                self.error(self.errorlog.PUNCTUATION, "Expected list to end in semicolon")
-        else:
-            self.error(self.errorlog.MISSINGKEYWORD, "Expected monitor list")
+                raise (errorlog.MissingKeywordError("Expected monitor list"))
+        except errorlog.CustomException as err:
+            self.error(err, stopping_symbols=(Scanner.SEMICOLON,))
 
     # --- LIST ITEMS ---
 
     def device(self):
-        device_id = self.devicename()
-        device_kind = None
-        device_property = None
-        self.next_symbol()
-        if self.symbol.type == Scanner.COLON:
+        try:
+            device_id = self.devicename()
+            device_kind = None
+            device_property = None
             self.next_symbol()
-            device_kind = self.symbol.id
-            if self.symbol.type == Scanner.NAME and self.symbol.id == self.devices.SWITCH:
+            if self.symbol.type == Scanner.COLON:
                 self.next_symbol()
-                if self.symbol.type == Scanner.NUMBER and self.symbol.id in (0, 1):
-                    device_property = self.symbol.id
+                device_kind = self.symbol.id
+                if (
+                    self.symbol.type == Scanner.NAME
+                    and self.symbol.id == self.devices.SWITCH
+                ):
                     self.next_symbol()
-                else:
-                    self.error(self.errorlog.DEVICE, "Switch must be followed by 0 (off) or 1 (on)")
-
-            elif (
-                self.symbol.type == Scanner.NAME
-                and self.symbol.id == self.devices.CLOCK
-            ):
-                self.next_symbol()
-                if self.symbol.type == Scanner.NUMBER:
-                    device_property = self.symbol.id
-                    self.next_symbol()
-                else:
-                    self.error(self.errorlog.DEVICE, "Clock must be followed by a number (N cycles)")
-
-            elif self.symbol.type == Scanner.NAME and self.symbol.id == self.devices.D_TYPE:
-                self.next_symbol()
-
-            elif (
-                self.symbol.type == Scanner.NAME
-                and self.symbol.id
-                in self.devices.gate_types
-            ):
-                self.next_symbol()
-                if self.symbol.type == Scanner.NUMBER:
-                    device_property = self.symbol.id
-                    self.next_symbol()
-                    if (
-                        self.symbol.type == Scanner.KEYWORD
-                        and self.symbol.id == self.names.query("INPUTS")
-                    ):
+                    if self.symbol.type == Scanner.NUMBER and self.symbol.id in (0, 1):
+                        device_property = self.symbol.id
                         self.next_symbol()
                     else:
-                        self.error(
-                            self.errorlog.MISSINGKEYWORD, "Number of inputs must be followed by keyword INPUTS"
+                        raise (
+                            errorlog.DeviceDefinitionError(
+                                "Switch must be followed by 0 (off) or 1 (on)"
+                            )
                         )
-            
+
+                elif (
+                    self.symbol.type == Scanner.NAME
+                    and self.symbol.id == self.devices.CLOCK
+                ):
+                    self.next_symbol()
+                    if self.symbol.type == Scanner.NUMBER:
+                        device_property = self.symbol.id
+                        self.next_symbol()
+                    else:
+                        raise (
+                            errorlog.DeviceDefinitionError(
+                                "Clock must be followed by a number (N cycles)"
+                            )
+                        )
+
+                elif (
+                    self.symbol.type == Scanner.NAME
+                    and self.symbol.id == self.devices.D_TYPE
+                ):
+                    self.next_symbol()
+
+                elif (
+                    self.symbol.type == Scanner.NAME
+                    and self.symbol.id in self.devices.gate_types
+                ):
+                    self.next_symbol()
+                    if self.symbol.type == Scanner.NUMBER:
+                        device_property = self.symbol.id
+                        if not 1 < device_property <= 16:
+                            raise (
+                                errorlog.OutOfBoundsError(
+                                    "Number of inputs must be between 1 and 16 inclusive."
+                                )
+                            )
+                        self.next_symbol()
+                        if (
+                            self.symbol.type == Scanner.KEYWORD
+                            and self.symbol.id == self.names.query("INPUTS")
+                        ):
+                            self.next_symbol()
+                        else:
+                            raise (
+                                errorlog.MissingKeywordError(
+                                    "Number of inputs must be followed by keyword INPUTS"
+                                )
+                            )
+
+                else:
+                    raise (errorlog.NameSyntaxError("Expected a valid device name"))
+
             else:
-                self.error(None, "Expected a valid device name")
+                raise (errorlog.PunctuationError("Device definition requires a colon"))
 
-        else:
-            self.error(self.errorlog.PUNCTUATION, "Device definition requires a colon")
-
-        # check symantic errors
-        if device_kind in self.devices.gate_types and device_kind != self.devices.XOR:
-            if not 1 < device_property <= 16:
-                self.error(self.errorlog.OUTOFBOUNDS, "Number of inputs must be between 1 and 16 inclusive.")
+        except errorlog.CustomException as err:
+            self.error(err)
 
         # create the device
-        if self.errorlog.no_errors():
-            error_type = self.devices.make_device(device_id, device_kind, device_property)
-            if error_type != self.devices.NO_ERROR:
-                self.error(None, "Device error")
+        finally:
+            if self.errorlog.no_errors():
+                error_type = self.devices.make_device(
+                    device_id, device_kind, device_property
+                )
+                if error_type != self.devices.NO_ERROR:
+                    self.error(None, "Device error")
 
     def connection(self):
-        out_device_id, out_port_id = self.outputname()
-        if self.symbol.type == Scanner.ARROW:
-            self.next_symbol()
-            in_device_id, in_port_id = self.inputname()
-        else:
-            self.error(None, "Connections must be linked with an arrow (->)")
+        try:
+            out_device_id, out_port_id = self.outputname()
+            if self.symbol.type == Scanner.ARROW:
+                self.next_symbol()
+                in_device_id, in_port_id = self.inputname()
+            else:
+                raise (
+                    errorlog.PunctuationError(
+                        "Connections must be linked with an arrow (->)"
+                    )
+                )
+
+        except errorlog.CustomException as err:
+            self.error(err)
 
         # create the connection
-        if self.errorlog.no_errors():
-            error_type = self.network.make_connection(in_device_id, in_port_id, out_device_id, out_port_id)
-            if error_type != self.network.NO_ERROR:
-                self.error(None, f"Network error {error_type} {self.network.NO_ERROR}")
+        finally:
+            if self.errorlog.no_errors():
+                error_type = self.network.make_connection(
+                    in_device_id, in_port_id, out_device_id, out_port_id
+                )
+                if error_type != self.network.NO_ERROR:
+                    raise (
+                        errorlog.CustomException(
+                            f"Network error {error_type} {self.network.NO_ERROR}"
+                        )
+                    )
 
     def monitor(self):
-        out_device_id, out_port_id = self.outputname()
-
+        try:
+            out_device_id, out_port_id = self.outputname()
+        except errorlog.CustomException as err:
+            self.error(err)
         # create the monitor
-        if self.errorlog.no_errors():
-           self.monitors.make_monitor(out_device_id, out_port_id)
+        finally:
+            if self.errorlog.no_errors():
+                self.monitors.make_monitor(out_device_id, out_port_id)
 
     # --- DEVICES, INPUTS, AND OUTPUTS ---
 
@@ -227,9 +285,13 @@ class Parser:
         if self.symbol.type == Scanner.NAME:
             return self.symbol.id
         elif self.symbol.type == Scanner.KEYWORD:
-            self.error(self.errorlog.KEYWORD, "Device name cannot be a keyword")
+            raise (errorlog.ProtectedKeywordError("Device name cannot be a keyword"))
         else:
-            self.error(self.errorlog.NAME, "Device name must be a valid alphanumeric identifier")
+            raise (
+                errorlog.NameSyntaxError(
+                    "Device name must be a valid alphanumeric identifier"
+                )
+            )
 
     def inputname(self):
         device_id = self.devicename()
@@ -253,13 +315,16 @@ class Parser:
                         return device_id, in_port_id
 
                     else:
-                        self.error(self.errorlog.NAME, "Must be a valid input")
+                        raise (errorlog.NameSyntaxError("Must be a valid input"))
             else:
-                self.error(
-                    self.errorlog.NAME, "For an input, dot must be followed by an alphanumeric name"
+                raise (
+                    errorlog.NameSyntaxError(
+                        "For an input, dot must be followed by an alphanumeric name"
+                    )
                 )
+
         else:
-            self.error(self.errorlog.PUNCTUATION, "Not an input - must have a dot")
+            raise (errorlog.PunctuationError("Not an input - must have a dot"))
 
     def outputname(self):
         device_id = self.devicename()
@@ -272,12 +337,9 @@ class Parser:
                     self.next_symbol()
                     return device_id, out_port_id
                 else:
-                    self.error(
-                        self.errorlog.NAME,
-                        "Must be a valid output name",
-                    )
+                    raise (errorlog.NameSyntaxError("Must be a valid output name"))
             else:
-                self.error(self.errorlog.NAME, "Symbol must be a name")
+                raise (errorlog.NameSyntaxError("Symbol must be a name"))
         else:
             return device_id, None
 

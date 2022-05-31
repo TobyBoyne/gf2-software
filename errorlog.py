@@ -1,50 +1,124 @@
-from typing import TYPE_CHECKING, Optional
-from names import Names
+"""File containing custom exceptions, and the ErrorLog class used for
+reporting and tracking errors in the file.
+
+CustomExceptions are used to prevent overlap with inbuilt Python Exceptions"""
+
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scanner import Symbol
 
+
+class CustomException(BaseException):
+    """A base Exception class used for the syntax and semantic errors that arise during
+    the parsing of the circuit definition file.
+
+    Parameters
+    ----------
+    *args: list of arguments passed into the BaseException class. Typically only one
+    argument, the error message, is passed to __init__
+
+    Public methods
+    --------------
+    set_error_pos(self, symbol): Sets the cursor position at which the error
+            occurs.
+
+    name(self): Return the name string of the error"""
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.error_line = None
+        self.error_column = None
+
+    def set_error_pos(self, symbol: "Symbol"):
+        self.cursor_line = symbol.cursor_line
+        self.cursor_column = symbol.cursor_column
+
+    def name(self):
+        return type(self).__name__
+
+
+# --- SYNTAX ERRORS ---
+
+
+class PunctuationError(CustomException):
+    pass
+
+
+class DeviceDefinitionError(CustomException):
+    pass
+
+
+class MissingKeywordError(CustomException):
+    pass
+
+
+class NameSyntaxError(CustomException):
+    pass
+
+
+# --- SEMANTIC ERRORS ---
+
+
+class DeviceReferenceError(CustomException):
+    pass
+
+
+class PortReferenceError(CustomException):
+    pass
+
+
+class ProtectedKeywordError(CustomException):
+    pass
+
+
+class MultipleConnectionError(CustomException):
+    pass
+
+
+class OutOfBoundsError(CustomException):
+    pass
+
+
 class ErrorLog:
+    """Record, store, and display both syntax and semantic errors that occur during parsing.
+
+    The errors are stored as instances of `CustomException`.
+
+    `self.errors` stores a list of the CustomException objects
+
+    Public methods
+    --------------
+    __call__(self, err): The instance is called with a CustomException to print
+        and store the error.
+
+    no_errors(self): Returns True if no errors have been raised
+
+    error_counts(self): Returns a dictionary of the type and frequency of the errors
+        encountered in parsing the file"""
+
     def __init__(self):
-        self.errors = {}
+        self.errors = []
 
-        self._error_names = Names()
+    def __call__(self, err: CustomException):
+        self.errors.append(err)
 
-        self.SYNTAXERRORS = [
-            self.PUNCTUATION,
-            self.DEVICE,
-            self.MISSINGKEYWORD,
-            self.NAME,
-        ] = self._error_names.lookup([
-            "PunctuationError",
-            "DeviceDefinitionError",
-            "MissingKeywordError",
-            "NameError",
-        ])
-
-        self.SEMANTICERRORS = [
-            self.REFERENCE,
-            self.KEYWORD,
-            self.CONNECTION,
-            self.QUALIFIER,
-            self.GATESPECIFIC,
-            self.OUTOFBOUNDS,
-        ] = self._error_names.lookup([
-            "ReferenceError",
-            "KeywordError",
-            "ConnectionError",
-            "QualifierError",
-            "GateSpecificError",
-            "OutOfBoundsError",
-        ])
-
-    def __call__(self, symbol: 'Symbol', error_type: Optional[int], error_message=""):
-        error_name = self._error_names.get_name_string(error_type)
-        print(f"{error_name}: {error_message} \n"
-              f" > error on line {symbol.cursor_line}, column {symbol.cursor_column}")
-
-        self.errors[error_type] = self.errors.get(error_type, 0) + 1
+        error_name = err.name()
+        print(
+            f"{error_name}: {err} \n"
+            f" > error on line {err.cursor_line}, column {err.cursor_column}"
+        )
 
     def no_errors(self):
+        """Returns True if no errors have been raised"""
         return len(self.errors) == 0
 
+    def error_counts(self):
+        """Return a dictionary with the type and frequency of errors. Mainly
+        useful for testing to ensure the correct errors are raised."""
+        counts = {}
+        for err in self.errors:
+            error_name = err.name()
+            counts[error_name] = counts.get(error_name, 0) + 1
+        return counts

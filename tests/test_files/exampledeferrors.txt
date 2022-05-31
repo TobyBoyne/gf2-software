@@ -1,0 +1,2 @@
+DEVICE  G1, AND 2 INPUTS, 
+        G2: NAND 18 INPUTS;
