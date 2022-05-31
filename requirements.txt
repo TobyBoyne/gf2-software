@@ -7,6 +7,6 @@ pycodestyle
 
 numpy
 matplotlib
-PIL
+pillow
 
 pre-commit

@@ -1,3 +1,5 @@
+# This Python file uses the following encoding: utf-8
+
 """Implement the graphical user interface for the Logic Simulator.
 
 Used in the Logic Simulator project to enable the user to run the simulation
@@ -416,6 +418,7 @@ class Gui(wx.Frame):
         # Settings Menu
         settingsMenu = wx.Menu()
         settingsMenu.Append(wx.ID_SELECT_COLOR, "&◑ Toggle Dark Mode\tCtrl+T")
+        settingsMenu.Append(wx.ID_SELECT_FONT, "&⎍ Modify Monitor Trace Settings")
         menuBar.Append(settingsMenu, "&Settings")
 
         self.SetMenuBar(menuBar)
@@ -597,6 +600,10 @@ class Gui(wx.Frame):
             )
 
         # Settings Tab
+        if Id == wx.ID_SELECT_FONT:
+            # Change Monitor Trace Settings
+            mtDialog = MonitorSetDialog(self, self, id=wx.ID_ANY, title="Change Monitor Trace Settings")
+            mtDialog.ShowModal()
         if Id == wx.ID_SELECT_COLOR:
             # Switch colours for everything
             self.canvas.toggledarkmode()
@@ -949,3 +956,60 @@ class Gui(wx.Frame):
 
 # TODO Open a file browser to select definition file
 # TODO Allow comments to be added at the end of the definition file?
+
+class MonitorSetDialog(wx.Dialog):
+    "Used to modify monitor trace settings"
+    def __init__(self, Gui, *args, **kw):
+        super(MonitorSetDialog, self).__init__(*args, **kw)
+
+        self.monitorheight = Gui.canvas.monitorheight
+        self.monitorspacing = Gui.canvas.monitorspacing
+        self.monitorstep = Gui.canvas.monitorstep
+        self.Gui = Gui
+        self.InitUI()
+        self.SetSize((250, 200))
+        self.SetTitle("Change Monitor Trace Settings")
+
+    def InitUI(self):
+
+        panel = wx.Panel(self)
+        dialog_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Monitor trace height"))
+        self.mheight_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorheight)
+        main_sizer.Add(self.mheight_spin)
+        main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Monitor trace time step horizontal spacing"))
+        self.mstep_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorstep)
+        main_sizer.Add(self.mstep_spin)
+        main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Vertical spacing between traces"))
+        self.mspace_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorspacing)
+        main_sizer.Add(self.mspace_spin)
+
+        panel.SetSizer(main_sizer)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, label='Apply')
+        closeButton = wx.Button(self, label='Close')
+        button_sizer.Add(okButton)
+        button_sizer.Add(closeButton)
+
+        dialog_sizer.Add(panel)
+        dialog_sizer.Add(button_sizer)
+
+        self.SetSizer(dialog_sizer)
+
+        okButton.Bind(wx.EVT_BUTTON, self.OnOk)
+        closeButton.Bind(wx.EVT_BUTTON, self.OnClose)
+
+    def OnOk(self, e):
+
+        self.Gui.canvas.monitorheight = self.mheight_spin.GetValue()
+        self.Gui.canvas.monitorspacing = self.mspace_spin.GetValue()
+        self.Gui.canvas.monitorstep = self.mstep_spin.GetValue()
+        print("Updated settings")
+
+    def OnClose(self, e):
+
+        self.Destroy()
