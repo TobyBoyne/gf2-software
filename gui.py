@@ -406,8 +406,8 @@ class Gui(wx.Frame):
         # Configure the file menu
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
-        fileMenu.Append(wx.ID_ABOUT, "&? About")
-        fileMenu.Append(wx.ID_FILE, "&… Show Description\tCtrl+D")
+        fileMenu.Append(wx.ID_ABOUT, "&?   About")
+        fileMenu.Append(wx.ID_FILE, "&…  Show Description\tCtrl+D")
         fileMenu.Append(wx.ID_SAVE, "&💾 Save Monitor Graphs\tCtrl+S")
         fileMenu.Append(wx.ID_EXIT, "&❌ Exit\tCtrl+Q")
         menuBar.Append(fileMenu, "&File")
@@ -420,7 +420,7 @@ class Gui(wx.Frame):
         # Settings Menu
         settingsMenu = wx.Menu()
         settingsMenu.Append(wx.ID_SELECT_COLOR, "&◑ Toggle Dark Mode\tCtrl+T")
-        settingsMenu.Append(wx.ID_SELECT_FONT, "&⎍ Modify Monitor Trace Settings")
+        settingsMenu.Append(wx.ID_SELECT_FONT, "&⎍  Modify Monitor Trace Settings")
         menuBar.Append(settingsMenu, "&Settings")
 
         self.SetMenuBar(menuBar)
@@ -563,7 +563,7 @@ class Gui(wx.Frame):
         if Id == wx.ID_ABOUT:
             wx.MessageBox(
                 "Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
-                "Group 19 \\ im475 --- tjad2  --- tjb94\n 2022",
+                "Group 19 \\ im475 --- tjad2  --- tjb94\n2022",
                 "About Logsim",
                 wx.ICON_INFORMATION | wx.OK,
             )
@@ -633,13 +633,13 @@ class Gui(wx.Frame):
             self.text_input.SetBackgroundColour(self.windowcolour)
             self.text_input.SetForegroundColour(self.textcolour)
             self.input_title.SetForegroundColour(self.textcolour)
-            self.spin.SetBackgroundColour(self.windowcolour)
+            if self.spin.SetBackgroundColour(self.windowcolour):
+                print("spin changed")
             self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
-            self.text.SetForegroundColour(
-                self.textcolour
-            )  # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
+            self.text.SetForegroundColour(self.textcolour)  
+            # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
             self.switch_title.SetForegroundColour(self.textcolour)
             self.monitor_title.SetForegroundColour(self.textcolour)
             self.switch_toggles.SetBackgroundColour(self.windowcolour)
@@ -650,6 +650,9 @@ class Gui(wx.Frame):
             for monitor in range(len(self.all_monitors)):
                 self.monitor_toggles.SetItemBackgroundColour(monitor, self.windowcolour)
                 self.monitor_toggles.SetItemForegroundColour(monitor, self.textcolour)
+            self.switch_toggles.SetForegroundColour(self.textcolour)
+            self.monitor_toggles.SetForegroundColour(self.textcolour)
+            self.log.Update()
 
     ## Sidebar events ##
     def on_spin(self, event):
@@ -975,7 +978,7 @@ class MonitorSetDialog(wx.Dialog):
         self.monitorstep = Gui.canvas.monitorstep
         self.Gui = Gui
         self.InitUI()
-        self.SetSize((250, 200))
+        self.Fit()
         self.SetTitle("Change Monitor Trace Settings")
 
     def InitUI(self):
