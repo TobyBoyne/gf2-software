@@ -76,6 +76,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.monitors = monitors
         self.devices = devices
         self.monitorsshow = False
+        self.parent = parent
 
         # Initialise variables for panning
         self.pan_x = 0
@@ -129,20 +130,6 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
         # Draw specified text at position (10, 10)
         self.render_text(text, 10, 10)
-
-        # Draw a sample signal trace
-        GL.glColor3f(0.0, 0.0, 1.0)  # signal trace is blue >>> glColor3f(R, G, B)
-        GL.glBegin(GL.GL_LINE_STRIP)
-        for i in range(10):
-            x = (i * 20) + 10
-            x_last = (i * 20) + 30
-            if i % 2 == 0:
-                y = 75
-            else:
-                y = 100
-            GL.glVertex2f(x, y)
-            GL.glVertex2f(x_last, y)
-        GL.glEnd()
 
         # We have been drawing to the back buffer, flush the graphics pipeline
         # and swap the back buffer to the front
@@ -241,6 +228,11 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
         # Monitor Traces
         index = 0
+
+        # Numbers along the bottom
+        for tick in range(self.parent.cycles_completed + 1):
+            self.render_text(str(tick), x_pos + self.fontsize * (margin - 0.3) + self.monitorstep*tick, y_pos - 20)
+
         for device_id, output_id in self.monitors.monitors_dictionary:
 
             monitor_name = self.devices.get_signal_name(device_id, output_id)
@@ -252,7 +244,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             # Background Lines & Names
             y = y_pos + index * (self.monitorheight + self.monitorspacing)
             x = x_pos + self.fontsize * margin # Can add in another multiplier here, depends on spacing between signal names and the traces
-            for line in range(len(signal_list)):
+            for line in range(len(signal_list) + 1):
                 # Linecolour is always a middle-grey
                 GL.glColor3f(*self.gridcolour)
                 GL.glBegin(GL.GL_LINES)
@@ -261,54 +253,62 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                 GL.glEnd()
             self.render_text(monitor_name, x_pos, y)
 
+            # LOW Line
+            for signal in range(len(signal_list)):
+                GL.glColor3f(*self.gridcolour)
+                GL.glBegin(GL.GL_LINES)
+                GL.glVertex2f(x + signal*self.monitorstep, y)
+                GL.glVertex2f(x + (signal+1)*self.monitorstep, y)
+                GL.glEnd()
+
             # Traces
             GL.glColor3f(r, g, b)
             GL.glBegin(GL.GL_LINE_STRIP)
 
             for signal in signal_list:
                 x_last = x
-                if signal == self.devices.HIGH:
-                    y = (
-                        y_pos
-                        + (index + 1) * self.monitorheight
-                        + index * self.monitorspacing
-                    )  # This shouldn't be necessary, just here for robustness
-                    x += self.monitorstep
-                if signal == self.devices.LOW:
-                    y = y_pos + index * (
-                        self.monitorheight + self.monitorspacing
-                    )  # This shouldn't be necessary, just here for robustness
-                    x += self.monitorstep
-                if signal == self.devices.RISING:
-                    y = y_pos + index * (
-                        self.monitorheight + self.monitorspacing
-                    )  # This shouldn't be necessary, just here for robustness
-                    x_last = x
-                    x += self.monitorstep / 3
+                if signal != self.devices.BLANK:
+                    if signal == self.devices.HIGH:
+                        y = (
+                            y_pos
+                            + (index + 1) * self.monitorheight
+                            + index * self.monitorspacing
+                        )  # This shouldn't be necessary, just here for robustness
+                        x += self.monitorstep
+                    if signal == self.devices.LOW:
+                        y = y_pos + index * (
+                            self.monitorheight + self.monitorspacing
+                        )  # This shouldn't be necessary, just here for robustness
+                        x += self.monitorstep
+                    if signal == self.devices.RISING:
+                        y = y_pos + index * (
+                            self.monitorheight + self.monitorspacing
+                        )  # This shouldn't be necessary, just here for robustness
+                        x_last = x
+                        x += self.monitorstep / 3
+                        GL.glVertex2f(x_last, y)
+                        GL.glVertex2f(x, y + self.monitorheight)
+                        y += self.monitorheight
+                        x_last = x
+                        x += 2*self.monitorstep / 3
+                    if signal == self.devices.FALLING:
+                        y = (
+                            y_pos
+                            + (index + 1) * self.monitorheight
+                            + index * self.monitorspacing
+                        )  # This shouldn't be necessary, just here for robustness
+                        x_last = x
+                        x += self.monitorstep / 3
+                        GL.glVertex2f(x_last, y)
+                        GL.glVertex2f(x, y - self.monitorheight)
+                        y -= self.monitorheight
+                        x_last = x
+                        x += 2*self.monitorstep / 3
                     GL.glVertex2f(x_last, y)
-                    GL.glVertex2f(x, y + self.monitorheight)
-                    y += self.monitorheight
-                    x_last = x
-                    x += 2*self.monitorstep / 3
-                if signal == self.devices.FALLING:
-                    y = (
-                        y_pos
-                        + (index + 1) * self.monitorheight
-                        + index * self.monitorspacing
-                    )  # This shouldn't be necessary, just here for robustness
-                    x_last = x
-                    x += self.monitorstep / 3
-                    GL.glVertex2f(x_last, y)
-                    GL.glVertex2f(x, y - self.monitorheight)
-                    y -= self.monitorheight
-                    x_last = x
-                    x += 2*self.monitorstep / 3
-                GL.glVertex2f(x_last, y)
-                GL.glVertex2f(x, y)
-                if signal == self.devices.BLANK:
+                    GL.glVertex2f(x, y)
+                else:
                     # Skips one step ahead without drawing a line between, might leave a dot?
                     x += self.monitorstep
-                    x_last = x
 
             index += 1
             GL.glEnd()
@@ -446,6 +446,8 @@ class Gui(wx.Frame):
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Run")
         self.run_button.SetBackgroundColour(self.windowcolour)
+        self.continue_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Continue")
+        self.continue_button.SetBackgroundColour(self.windowcolour)
         self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches\n☐=0, ☑=1")
 
         # Constructs the switch list in a way that doesn't cause problems before stuff is connected
@@ -515,6 +517,7 @@ class Gui(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_menu)
         self.spin.Bind(wx.EVT_SPINCTRL, self.on_spin)
         self.run_button.Bind(wx.EVT_BUTTON, self.on_run_button)
+        self.continue_button.Bind(wx.EVT_BUTTON, self.on_continue_button)
         self.text_input.Bind(wx.EVT_TEXT_ENTER, self.on_text_input)
         self.switch_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_switch_check)
         self.monitor_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_monitor_check)
@@ -541,7 +544,8 @@ class Gui(wx.Frame):
 
         side_sizer.Add(self.text, 0, 1)
         side_sizer.Add(self.spin, 0, 1)
-        side_sizer.Add(self.run_button, 0, 1)
+        side_sizer.Add(self.run_button, 0, wx.ALIGN_CENTER | wx.TOP, 5)
+        side_sizer.Add(self.continue_button, 0, wx.ALIGN_CENTER | wx.TOP, 5)
         side_sizer.Add(self.switch_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
         side_sizer.Add(self.switch_toggles, wx.EXPAND, 1, 1)
         side_sizer.Add(self.monitor_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
@@ -634,10 +638,12 @@ class Gui(wx.Frame):
             self.text_input.SetBackgroundColour(self.windowcolour)
             self.text_input.SetForegroundColour(self.textcolour)
             self.input_title.SetForegroundColour(self.textcolour)
-            self.spin.SetBackgroundColour(self.windowcolour)
-            self.spin.SetForegroundColour(self.textcolour)
+            #self.spin.SetBackgroundColour(self.windowcolour)   # This line doesn't work in Linux for no apparent reason so the spinner stands out a bit
+            #self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
+            self.continue_button.SetBackgroundColour(self.windowcolour)
+            self.continue_button.SetForegroundColour(self.textcolour)
             self.text.SetForegroundColour(self.textcolour)  
             self.switch_title.SetForegroundColour(self.textcolour)
             self.monitor_title.SetForegroundColour(self.textcolour)
@@ -657,7 +663,6 @@ class Gui(wx.Frame):
             for line in range(1, self.log.GetNumberOfLines()):
                 log_text = "\n".join([log_text, self.log.GetLineText(line)])
             self.log.SetValue(log_text)
-            self.spin.Refresh()
 
 
     ## Sidebar events ##
@@ -670,6 +675,11 @@ class Gui(wx.Frame):
         """Handle the event when the user clicks the run button."""
         print("Run button pressed.")
         self.run_command(self.spin.GetValue())
+
+    def on_continue_button(self, event):
+        """Handle the event when the user clicks the continue button."""
+        print("Continue button pressed.")
+        self.continue_command(self.spin.GetValue())
 
     def on_switch_check(self, event):  
         """Handle the event when the user clicks one of the switch checkboxes"""
@@ -949,9 +959,13 @@ class Gui(wx.Frame):
             self.canvas.monitorsshow = True
             self.canvas.on_paint(0)
 
-    def continue_command(self):
+    def continue_command(self, cycles="Read text"):
         """Continue a previously run simulation."""
-        cycles = self.read_number(0, None)
+        if cycles == "Read text":
+            cycles = self.read_number(0, None)
+        elif type(cycles) != int or cycles <= 0:
+            print("Invalid number of cycles (must be integer). Enter 'h' for help.")
+            cycles = None # Will stop the continue_command here
         if cycles is not None:  # if the number of cycles provided is valid
             if self.cycles_completed == 0:
                 print("Error! Nothing to continue. Run first.")
@@ -998,7 +1012,7 @@ class MonitorSetDialog(wx.Dialog):
         self.mheight_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorheight, min=1)
         main_sizer.Add(self.mheight_spin)
         main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Monitor trace time step horizontal spacing"))
-        self.mstep_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorstep, min=1)
+        self.mstep_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorstep, min=10)
         main_sizer.Add(self.mstep_spin)
         main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Vertical spacing between traces"))
         self.mspace_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorspacing, min=1)
