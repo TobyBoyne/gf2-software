@@ -22,5 +22,3 @@ CONNECT CLK -> G1.I1,
 MONITOR CLK,
 	  G3,
  	  XOR;
-        
-		
