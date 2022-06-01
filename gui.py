@@ -633,9 +633,8 @@ class Gui(wx.Frame):
             self.text_input.SetBackgroundColour(self.windowcolour)
             self.text_input.SetForegroundColour(self.textcolour)
             self.input_title.SetForegroundColour(self.textcolour)
-            if self.spin.SetBackgroundColour(self.windowcolour):
-                print("spin changed")
-            self.spin.SetForegroundColour(self.textcolour)
+            self.spin.SetBackgroundColour(self.windowcolour)
+            #self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
             self.text.SetForegroundColour(self.textcolour)  
@@ -650,9 +649,15 @@ class Gui(wx.Frame):
             for monitor in range(len(self.all_monitors)):
                 self.monitor_toggles.SetItemBackgroundColour(monitor, self.windowcolour)
                 self.monitor_toggles.SetItemForegroundColour(monitor, self.textcolour)
-            self.switch_toggles.SetForegroundColour(self.textcolour)
+            # These last two are only used on Linux, the above section only on Windows
+            self.switch_toggles.SetForegroundColour(self.textcolour)    
             self.monitor_toggles.SetForegroundColour(self.textcolour)
-            self.log.Update()
+            # Log box needs to be re-written in Linux as the text keeps the old colour when Dark Mode is toggled
+            log_text = self.log.GetLineText(0)
+            for line in range(1, self.log.GetNumberOfLines()):
+                log_text = "\n".join([log_text, self.log.GetLineText(line)])
+            self.log.SetValue(log_text)
+
 
     ## Sidebar events ##
     def on_spin(self, event):
@@ -988,13 +993,13 @@ class MonitorSetDialog(wx.Dialog):
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Monitor trace height"))
+        main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Monitor trace height"))
         self.mheight_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorheight, min=1)
         main_sizer.Add(self.mheight_spin)
-        main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Monitor trace time step horizontal spacing"))
+        main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Monitor trace time step horizontal spacing"))
         self.mstep_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorstep, min=1)
         main_sizer.Add(self.mstep_spin)
-        main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Vertical spacing between traces"))
+        main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Vertical spacing between traces"))
         self.mspace_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorspacing, min=1)
         main_sizer.Add(self.mspace_spin)
 
