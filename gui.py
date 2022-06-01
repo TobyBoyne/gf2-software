@@ -16,6 +16,7 @@ from fileinput import filename
 import numpy as np
 import wx
 import wx.glcanvas as wxcanvas
+import wx.lib.buttons
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
@@ -443,7 +444,7 @@ class Gui(wx.Frame):
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10", min = 1)
         self.spin.SetBackgroundColour(self.windowcolour)
-        self.run_button = wx.Button(self, wx.ID_ANY, "Run")
+        self.run_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Run")
         self.run_button.SetBackgroundColour(self.windowcolour)
         self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches\n☐=0, ☑=1")
 
@@ -634,11 +635,10 @@ class Gui(wx.Frame):
             self.text_input.SetForegroundColour(self.textcolour)
             self.input_title.SetForegroundColour(self.textcolour)
             self.spin.SetBackgroundColour(self.windowcolour)
-            #self.spin.SetForegroundColour(self.textcolour)
+            self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
             self.text.SetForegroundColour(self.textcolour)  
-            # TODO See if scrollbars can be done if they aren't wx.ScrollBar?
             self.switch_title.SetForegroundColour(self.textcolour)
             self.monitor_title.SetForegroundColour(self.textcolour)
             self.switch_toggles.SetBackgroundColour(self.windowcolour)
@@ -657,6 +657,7 @@ class Gui(wx.Frame):
             for line in range(1, self.log.GetNumberOfLines()):
                 log_text = "\n".join([log_text, self.log.GetLineText(line)])
             self.log.SetValue(log_text)
+            self.spin.Refresh()
 
 
     ## Sidebar events ##
