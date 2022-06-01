@@ -18,17 +18,13 @@ def new_file(tmpdir, file_contents):
     return p
 
 
-error_test_files = [("DEVICE A: AND ! INPUTS;", ValueError), ("CONNECT B - C", ValueError)]
+generate_test_files = ["DEVICE A: AND 1 INPUTS;", "CONNECT B -> C"]
 
 
-@pytest.mark.parametrize("file_contents,error_type", error_test_files)
-def test_scanner_raises_errors(file_contents, error_type, tmpdir):
+@pytest.mark.parametrize("file_contents", generate_test_files)
+def test_write_new_file(file_contents, tmpdir):
     """Test if the scanner correctly raises an error."""
-    path = new_file(tmpdir, file_contents)
-    scanner = Scanner(path, Names())
-    with pytest.raises(error_type):
-        # scan the file, expecting an error of given type
-        scanner.advance()
+    new_file(tmpdir, file_contents)
 
 
 names_test_files = [(WHITESPACES + "DEVICE", "DEVICE"), ("G1 -> G2", "G1"), ("->", "")]
