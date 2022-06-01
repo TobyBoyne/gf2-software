@@ -91,10 +91,9 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.monitorstep = 30
 
         # Initialise in light-mode
-        self.textcolour = (0.0, 0.0, 0.0)   # Light mode text colour is black
-        self.SetCurrent(self.context)
-        GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
-        self.gridcolour = (0.8, 0.8, 0.8)   # Lines are a very light grey
+        self.textcolour = (0.0, 0.0, 0.0)       # Light mode text colour is black
+        self.clearcolour = (1.0, 1.0, 1.0, 0.0) # Background is white
+        self.gridcolour = (0.8, 0.8, 0.8)       # Lines are a very light grey
 
         # Bind events to the canvas
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -108,6 +107,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         GL.glDrawBuffer(GL.GL_BACK)
         GL.glViewport(0, 0, size.width, size.height)
         GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glClearColor(*self.clearcolour) 
         GL.glLoadIdentity()
         GL.glOrtho(0, size.width, 0, size.height, -1, 1)
         GL.glMatrixMode(GL.GL_MODELVIEW)
@@ -320,14 +320,16 @@ class MyGLCanvas(wxcanvas.GLCanvas):
     def toggledarkmode(self):
         if self.textcolour == (0.0, 0.0, 0.0):
             # Now switching to dark mode
-            self.textcolour = (1.0, 1.0, 1.0)   # Text is now white
-            GL.glClearColor(0.1, 0.1, 0.1, 0.0) # Background is dark grey
-            self.gridcolour = (0.2, 0.2, 0.2)   # Grid is now dark grey
+            self.textcolour = (1.0, 1.0, 1.0)       # Text is now white
+            self.clearcolour = (0.1, 0.1, 0.1, 0.0) # Background is dark grey
+            self.gridcolour = (0.2, 0.2, 0.2)       # Grid is now dark grey
         else:
             # Now switching to light mode
-            self.textcolour = (0.0, 0.0, 0.0)   # Text is now black
-            GL.glClearColor(1.0, 1.0, 1.0, 0.0) # Background is white
-            self.gridcolour = (0.8, 0.8, 0.8)   # Grid is now light grey
+            self.textcolour = (0.0, 0.0, 0.0)       # Text is now black
+            self.clearcolour = (1.0, 1.0, 1.0, 0.0) # Background is white
+            self.gridcolour = (0.8, 0.8, 0.8)       # Grid is now light grey
+        self.init = False
+        self.on_paint(0) # Repaint the canvas
 
     def save_image(self, filepath):
         # Check the filepath is correct
