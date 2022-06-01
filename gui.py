@@ -85,7 +85,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         # Initialise variables for zooming
         self.zoom = 1
 
-        # Initialise some drawing settings                                          # TODO make a Settings option to change these (change values->clear canvas->redraw canvas)
+        # Initialise some drawing settings
         self.monitorheight = 20
         self.monitorspacing = 15
         self.monitorstep = 30
@@ -157,7 +157,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
             self.init = True
         if (
             self.monitorsshow
-        ):  # FIXME I don't know if this is broken or not but if it's buggy check this first
+        ):  
             self.render_monitors(30, 30)
         else:
             self.render("Monitor traces will appear after the circuit is run")
@@ -439,7 +439,7 @@ class Gui(wx.Frame):
 
         # Configure the widgets
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
-        self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10")
+        self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10", min = 1)
         self.spin.SetBackgroundColour(self.windowcolour)
         self.run_button = wx.Button(self, wx.ID_ANY, "Run")
         self.run_button.SetBackgroundColour(self.windowcolour)
@@ -660,7 +660,7 @@ class Gui(wx.Frame):
         print("Run button pressed.")
         self.run_command(self.spin.GetValue())
 
-    def on_switch_check(self, event):  # TODO test me
+    def on_switch_check(self, event):  
         """Handle the event when the user clicks one of the switch checkboxes"""
         switch_index = event.GetInt()
         switch = self.switch_list[switch_index]
@@ -686,7 +686,7 @@ class Gui(wx.Frame):
 
     def on_monitor_check(
         self, event
-    ):  # TODO test this too, uses same design as on_switch_check above
+    ): 
         """Handle the event when the user clicks on one of the monitor checkboxes"""
         monitor_index = event.GetInt()
         monitor_name = self.all_monitors[monitor_index]
@@ -699,6 +699,7 @@ class Gui(wx.Frame):
                 # Remove the monitor from the monitored list and add it to the unmonitored list
                 self.monitored_list.remove(monitor_name)
                 self.unmonitored_list.append(monitor_name)
+                self.canvas.on_paint(0)
             else:
                 print("Error! Invalid monitor.")
         elif monitor_name in self.unmonitored_list:
@@ -709,6 +710,7 @@ class Gui(wx.Frame):
                 # Remove the monitor from the unmonitored list and add it to the monitored list
                 self.unmonitored_list.remove(monitor_name)
                 self.monitored_list.append(monitor_name)
+                self.canvas.on_paint(0)
             elif code == self.monitors.NOT_OUTPUT:
                 print("Error! Invalid monitor output.")
             elif code == self.network.DEVICE_ABSENT:
@@ -890,6 +892,7 @@ class Gui(wx.Frame):
             )
             if monitor_error == self.monitors.NO_ERROR:
                 print("Successfully made monitor.")
+                self.canvas.on_paint(0)
             else:
                 print("Error! Could not make monitor.")
 
@@ -900,6 +903,7 @@ class Gui(wx.Frame):
             [device, port] = monitor
             if self.monitors.remove_monitor(device, port):
                 print("Successfully zapped monitor")
+                self.canvas.on_paint(0)
             else:
                 print("Error! Could not zap monitor.")
 
@@ -922,9 +926,9 @@ class Gui(wx.Frame):
         self.cycles_completed = 0
         if cycles == "Read text":
             cycles = self.read_number(0, None)
-        elif type(cycles) != int:
+        elif type(cycles) != int or cycles <= 0:
             print("Invalid number of cycles (must be integer). Enter 'h' for help.")
-
+            cycles = None # Will stop the run_command here
         if cycles is not None:  # if the number of cycles provided is valid
             self.monitors.reset_monitors()
             print("".join(["Running for ", str(cycles), " cycles"]))
@@ -932,6 +936,7 @@ class Gui(wx.Frame):
             if self.run_network(cycles):
                 self.cycles_completed += cycles
             self.canvas.monitorsshow = True
+            self.canvas.on_paint(0)
 
     def continue_command(self):
         """Continue a previously run simulation."""
@@ -952,6 +957,7 @@ class Gui(wx.Frame):
                         ]
                     )
                 )
+                self.canvas.on_paint(0)
 
 
 # TODO Open a file browser to select definition file
@@ -978,13 +984,13 @@ class MonitorSetDialog(wx.Dialog):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
         main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Monitor trace height"))
-        self.mheight_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorheight)
+        self.mheight_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorheight, min=1)
         main_sizer.Add(self.mheight_spin)
         main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Monitor trace time step horizontal spacing"))
-        self.mstep_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorstep)
+        self.mstep_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorstep, min=1)
         main_sizer.Add(self.mstep_spin)
         main_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Vertical spacing between traces"))
-        self.mspace_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorspacing)
+        self.mspace_spin = wx.SpinCtrl(panel, wx.ID_ANY, initial=self.monitorspacing, min=1)
         main_sizer.Add(self.mspace_spin)
 
         panel.SetSizer(main_sizer)
@@ -1008,6 +1014,7 @@ class MonitorSetDialog(wx.Dialog):
         self.Gui.canvas.monitorheight = self.mheight_spin.GetValue()
         self.Gui.canvas.monitorspacing = self.mspace_spin.GetValue()
         self.Gui.canvas.monitorstep = self.mstep_spin.GetValue()
+        self.Gui.canvas.on_paint(0)
         print("Updated settings")
 
     def OnClose(self, e):
