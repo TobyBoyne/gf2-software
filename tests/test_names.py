@@ -16,8 +16,7 @@ def name_list():
 
 @pytest.fixture
 def names_added(name_list):
-    """Return an istance after passing a list of names"""
-    #["Toby"=0, "Thomas"=1, "Ieronymos"=2, "TikTok"=3, "Johnny"=4]
+    """Return an instance after passing a list of names"""
     names = Names()
     names.lookup(name_list)
     return names
@@ -38,7 +37,7 @@ def errors_added(names_added, initial_errors):
 
 def test_unique_errors_raises_error(names_added):
     """Test to check that unique_error_code raises a TypeError 
-    upon inputing a non-integer argument"""
+    upon input a non-integer argument"""
     
     with pytest.raises(TypeError):
         names_added.unique_error_codes("some str")
@@ -77,7 +76,7 @@ def test_added_error_count(errors_added, new_errors, expected):
 def test_query(names_added, n, name, expected_id):
     """Test query function on empty instance and names_added instance"""
     assert names_added.query(name) == expected_id
-    assert n.query(name) == None
+    assert n.query(name) is None
 
 
 @pytest.mark.parametrize(
@@ -106,7 +105,7 @@ def test_lookup(names_added, names_list, expected_ids):
 def test_get_name_string(names_added, n, _id, expected_name):
     """Test if get_name_string."""
     assert names_added.get_name_string(_id) == expected_name
-    assert n.get_name_string(_id) == None
+    assert n.get_name_string(_id) is None
 
 
 def test_get_name_string_negative_input(names_added, n):
@@ -115,7 +114,3 @@ def test_get_name_string_negative_input(names_added, n):
         names_added.get_name_string(-5)
     with pytest.raises(AssertionError):
         n.get_name_string(-1)
-
-
-
-
