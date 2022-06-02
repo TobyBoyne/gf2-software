@@ -14,6 +14,7 @@ def new_file(tmpdir, file_contents):
     p.write(file_contents)
     return p
 
+
 @pytest.fixture(scope="function")
 def parser(tmpdir, request):
     """Create a new parser object
@@ -35,12 +36,11 @@ def test_parser_creation(parser):
     assert isinstance(parser, Parser)
 
 
-
 devicename_test_files_1 = ["DEVICE", "CONNECT", "MONITOR", "INPUTS"]
 
 
 @pytest.mark.parametrize("parser", devicename_test_files_1, indirect=True)
-def test_parse_raises_semantic_errors_1(parser):
+def test_raises_semantic_error_in_devicename(parser):
     """Test if the parser correctly raises a ProtectedKeywordError."""
     parser.next_symbol()
     with pytest.raises(errorlog.ProtectedKeywordError):
@@ -71,3 +71,13 @@ def test_parse_raises_syntax_errors_2(parser):
     parser.next_symbol()
     with pytest.raises(errorlog.PunctuationError):
         parser.inputname()
+
+
+@pytest.mark.parametrize("parser", ["SW1: SWITCH 2"], indirect=True)
+def test_raises_DeviceDefinition_error(parser):
+    """Test if the parser correctly raises a DeviceDefinition.
+
+    Occurs when a switch or clock is not followed by an appropriate number. """
+    parser.next_symbol()
+    with pytest.raises(errorlog.DeviceDefinitionError):
+        parser.device()
