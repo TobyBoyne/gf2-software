@@ -132,11 +132,10 @@ def test_parse_raises_syntax_errors_2(parser):
     assert parser.errorlog.contains_error(errorlog.PunctuationError)
 
 
-@pytest.mark.parametrize("parser", ["SW1: SWITCH 2"], indirect=True)
+@pytest.mark.parametrize("parser", ["SW1: SWITCH 2", "CLK1: CLOCK N", "CLK2: CLOCK "], indirect=True)
 def test_raises_DeviceDefinition_error(parser):
     """Test if the parser correctly raises a DeviceDefinition.
-
     Occurs when a switch or clock is not followed by an appropriate number."""
     parser.next_symbol()
-    with pytest.raises(errorlog.DeviceDefinitionError):
-        parser.device()
+    parser.device()
+    assert parser.errorlog.contains_error(errorlog.DeviceDefinitionError)
