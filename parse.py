@@ -295,6 +295,12 @@ class Parser:
 
     def inputname(self):
         device_id = self.devicename()
+
+        if self.devices.get_device(device_id) is None:
+            raise errorlog.DeviceReferenceError(
+                "The device name has not been defined in the device list"
+            )
+
         self.next_symbol()
         if self.symbol.type == Scanner.DOT:
             self.next_symbol()
@@ -315,7 +321,7 @@ class Parser:
                         return device_id, in_port_id
 
                     else:
-                        raise (errorlog.NameSyntaxError("Must be a valid input"))
+                        raise (errorlog.PortReferenceError("Must be a valid input"))
             else:
                 raise (
                     errorlog.NameSyntaxError(
@@ -328,6 +334,12 @@ class Parser:
 
     def outputname(self):
         device_id = self.devicename()
+
+        if self.devices.get_device(device_id) is None:
+            raise errorlog.DeviceReferenceError(
+                "The device name has not been defined in the device list"
+            )
+
         self.next_symbol()
         if self.symbol.type == Scanner.DOT:
             self.next_symbol()
