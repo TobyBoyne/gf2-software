@@ -35,12 +35,13 @@ def test_parser_creation(parser):
     """Create a parser object using fixtures"""
     assert isinstance(parser, Parser)
 
+
 # --- SYMANTIC ERRORS ---
 
 devicename_test_files_1 = ["DEVICE", "CONNECT", "MONITOR", "INPUTS"]
 
-@pytest.mark.parametrize("parser", devicename_test_files_1, indirect=True)
-def test_raises_semantic_error_in_devicename(parser):
+#@pytest.mark.parametrize("parser", devicename_test_files_1, indirect=True)
+#def test_raises_semantic_error_in_devicename(parser):
 
 @pytest.mark.parametrize("parser", 
     ["DEVICE G1 XOR; MONITOR G2;"], 
@@ -130,11 +131,10 @@ def test_parse_raises_syntax_errors_2(parser):
         parser.inputname()
 
 
-@pytest.mark.parametrize("parser", ["SW1: SWITCH 2"], indirect=True)
+@pytest.mark.parametrize("parser", ["SW1: SWITCH 2", "CLK1: CLOCK N", "CLK2: CLOCK "], indirect=True)
 def test_raises_DeviceDefinition_error(parser):
     """Test if the parser correctly raises a DeviceDefinition.
-
-    Occurs when a switch or clock is not followed by an appropriate number. """
+    Occurs when a switch or clock is not followed by an appropriate number."""
     parser.next_symbol()
-    with pytest.raises(errorlog.DeviceDefinitionError):
-        parser.device()
+    parser.device()
+    assert parser.errorlog.contains_error(errorlog.DeviceDefinitionError)
