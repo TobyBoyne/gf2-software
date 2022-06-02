@@ -5,20 +5,20 @@ DEVICE  G1: NAND 2 INPUTS,
         G5: XOR,
 	  SW1: SWITCH 0,
 	  SW2: SWITCH 1,
- 	  SW3: SWITCH 0,
-    	  CLK: CLOCK 10;
+ 	  SW3: SWITCH 1,
+    	  CLK: CLOCK 5;
 
-CONNECT CLK -> G1.I1,
+CONNECT CLK -> G1.I2,
         CLK -> G2.I1,
         CLK -> G3.I1,
-        SW1 -> G1.I2,
+        SW1 -> G1.I1,
         SW2 -> G2.I2,
         SW3 -> G3.I2,
-	  G1 -> G4.I1,
-	  G2 -> G4.I2,
-	  G3 -> G5.I1,
+	  G2 -> G4.I1,
+	  G3 -> G4.I2,
+	  G1 -> G5.I1,
 	  G4 -> G5.I2;
 
 MONITOR CLK,
-	  G3,
- 	  XOR;
+        G4,
+        G5;
