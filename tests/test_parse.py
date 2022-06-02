@@ -43,7 +43,7 @@ def test_parser_creation(parser):
 @pytest.mark.parametrize(
     "parser", ["DEVICE G1: XOR; CONNECT G1 -> G2.I1;"], indirect=True
 )
-def test_raises_devicereferenceerror(parser):
+def test_raises_device_reference_error(parser):
     parser.parse_network()
     print("abc", parser.errorlog.error_counts())
     assert parser.errorlog.contains_error(errorlog.DeviceReferenceError)
@@ -52,7 +52,7 @@ def test_raises_devicereferenceerror(parser):
 @pytest.mark.parametrize(
     "parser", ["DEVICE G1: XOR, G2: XOR; CONNECT G1 -> G2.NOTVALID;"], indirect=True
 )
-def test_raises_portreferenceerror(parser):
+def test_raises_port_reference_error(parser):
     parser.parse_network()
     print("jkl", parser.errorlog.error_counts())
 
@@ -62,7 +62,7 @@ def test_raises_portreferenceerror(parser):
 @pytest.mark.parametrize(
     "parser", ["DEVICE", "CONNECT", "MONITOR", "INPUTS"], indirect=True
 )
-def test_raises_protectedkeyworderror(parser):
+def test_raises_protected_keyword_error(parser):
 
     """Test if the parser correctly raises a ProtectedKeywordError."""
     parser.next_symbol()
@@ -77,7 +77,7 @@ def test_raises_protectedkeyworderror(parser):
     ],
     indirect=True,
 )
-def test_raises_multipleconnectionerror(parser):
+def test_raises_multiple_connection_error(parser):
     parser.parse_network()
     assert parser.errorlog.contains_error(errorlog.MultipleConnectionError)
 
@@ -96,19 +96,15 @@ def test_raises_outofbounds(parser):
 @pytest.mark.parametrize(
     "parser", ["DEVICE G1: XOR; CONNECT G1 -> G2; MONITOR G1.xx;"], indirect=True
 )
-def test_raises_namesyntaxerror_in_monitor(parser):
+def test_parse_network_raises_names_syntax_error(parser):
     """Test if the parser correctly raises a NameSyntax."""
     parser.parse_network()
     assert parser.errorlog.contains_error(errorlog.NameSyntaxError)
 
 
-devicename_test_files_2 = [",NOR", ":G1:", "0SW", "\t;CLK1"]
-
-
-@pytest.mark.parametrize("parser", devicename_test_files_2, indirect=True)
-def test_parse_raises_syntax_errors_1(parser):
+@pytest.mark.parametrize("parser", [",NOR", ":G1:", "0SW", "\t;CLK1"], indirect=True)
+def test_parse_devicename_raises_name_syntax_error(parser):
     """Test if the parser correctly raises a NameSyntaxError.
-
     Error occurs when a name does not start at a letter"""
     parser.next_symbol()
     with pytest.raises(errorlog.NameSyntaxError):
@@ -124,18 +120,28 @@ inputname_test_files = [
 
 
 @pytest.mark.parametrize("parser", inputname_test_files, indirect=True)
-def test_parse_raises_syntax_errors_2(parser):
+def test_parse_network_raises_punctuation_error(parser):
     """Test if the parser correctly raises a PunctuationError.
-
     Occurs when an input does not start with a dot."""
     parser.parse_network()
     assert parser.errorlog.contains_error(errorlog.PunctuationError)
 
 
 @pytest.mark.parametrize("parser", ["SW1: SWITCH 2", "CLK1: CLOCK N", "CLK2: CLOCK "], indirect=True)
-def test_raises_DeviceDefinition_error(parser):
-    """Test if the parser correctly raises a DeviceDefinition.
+def test_parse_device_raises_device_definition_error(parser):
+    """Test if the parser correctly raises a DeviceDefinitionError.
     Occurs when a switch or clock is not followed by an appropriate number."""
     parser.next_symbol()
     parser.device()
     assert parser.errorlog.contains_error(errorlog.DeviceDefinitionError)
+
+
+@pytest.mark.parametrize("parser", ["SW1: SWITCH 1", "CLK1: CLOCK 10", "CLK2: CLOCK 1"], indirect=True)
+def test_parse_devicelist_raises_missing_keyword_error(parser):
+    """Test if the parser correctly raises a MissingKeywordError.
+    Occurs when the DEVICE Keyword does not precede the device list."""
+    parser.next_symbol()
+    parser.devicelist()
+    assert parser.errorlog.contains_error(errorlog.MissingKeywordError)
+
+
