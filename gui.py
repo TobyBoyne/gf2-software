@@ -20,6 +20,7 @@ import wx.lib.buttons
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
+from zmq import device
 
 from devices import Devices
 from monitors import Monitors
@@ -898,8 +899,14 @@ class Gui(wx.Frame):
         if switch_id is not None:
             switch_state = self.read_number(0, 1)
             if switch_state is not None:
+                switch_name = self.read_portname()
+                switch_index = self.switch_list_names.index(switch_name)
                 if self.devices.set_switch(switch_id, switch_state):
                     print("Successfully set switch.")
+                    if switch_state == 1:
+                        self.switch_toggles.Check(switch_index, True)
+                    elif switch_state == 0:
+                        self.switch_toggles.Check(switch_index, False)
                 else:
                     print("Error! Invalid switch.")
 
@@ -914,8 +921,33 @@ class Gui(wx.Frame):
             if monitor_error == self.monitors.NO_ERROR:
                 print("Successfully made monitor.")
                 self.canvas.on_paint(0)
+                
+                # This is not very clean but it should work
+                monitor_name = self.read_portname()
+
+                monitor_index = self.all_monitors.index(monitor_name)
+                self.monitor_toggles.Check(monitor_index, True)
+                self.unmonitored_list.remove(monitor_name)
+                self.monitored_list.append(monitor_name)
             else:
                 print("Error! Could not make monitor.")
+
+    def read_portname(self):
+        """Reads the string name of the port entered"""
+        self.cursor = 0
+        # We don't care about the command here, just want to skip past it
+        self.read_command()
+        device_name = self.read_string()
+
+        if device_name is None:
+            return None
+        elif self.character == ".":
+            port_name = self.read_string()
+            if port_name is None:
+                return "".join([device_name, ""])
+        else:
+            return device_name
+        return "".join([device_name, ".", port_name])
 
     def zap_command(self):
         """Remove the specified monitor."""
@@ -925,6 +957,14 @@ class Gui(wx.Frame):
             if self.monitors.remove_monitor(device, port):
                 print("Successfully zapped monitor")
                 self.canvas.on_paint(0)
+
+                # This is not very clean but it should work
+                monitor_name = self.read_portname()
+
+                monitor_index = self.all_monitors.index(monitor_name)
+                self.monitor_toggles.Check(monitor_index, False)
+                self.monitored_list.remove(monitor_name)
+                self.unmonitored_list.append(monitor_name)
             else:
                 print("Error! Could not zap monitor.")
 
@@ -984,9 +1024,6 @@ class Gui(wx.Frame):
                 )
                 self.canvas.on_paint(0)
 
-
-# TODO Open a file browser to select definition file
-# TODO Allow comments to be added at the end of the definition file?
 
 class MonitorSetDialog(wx.Dialog):
     "Used to modify monitor trace settings"
