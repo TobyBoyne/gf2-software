@@ -73,7 +73,8 @@ class Network:
             self.INPUT_CONNECTED,
             self.PORT_ABSENT,
             self.DEVICE_ABSENT,
-        ] = self.names.unique_error_codes(6)
+            self.NO_CONNECTION,
+        ] = self.names.unique_error_codes(7)
         self.steady_state = True  # for checking if signals have settled
 
     def get_connected_output(self, device_id, input_id):
@@ -155,6 +156,60 @@ class Network:
                         first_device_id,
                         first_port_id,
                     )
+                    error_type = self.NO_ERROR
+            else:
+                error_type = self.PORT_ABSENT
+
+        else:  # first_port_id not a valid input or output port
+            error_type = self.PORT_ABSENT
+
+        return error_type
+
+    def remove_connection(
+        self, first_device_id, first_port_id, second_device_id, second_port_id
+    ):
+        """Remove a connection from the first device to the second device. The first
+        device is the input, the second device is the output, where a connection is
+            output -> input
+
+        Return self.NO_ERROR if successful, or the corresponding error if not."""
+        first_device = self.devices.get_device(first_device_id)
+        second_device = self.devices.get_device(second_device_id)
+
+        if first_device is None or second_device is None:
+            error_type = self.DEVICE_ABSENT
+
+        elif first_port_id in first_device.inputs:
+            if second_port_id in second_device.inputs:
+                # Both ports are inputs
+                error_type = self.INPUT_TO_INPUT
+            elif second_port_id not in second_device.outputs:
+                error_type = self.PORT_ABSENT
+
+            elif first_device.inputs[first_port_id] != (
+                second_device_id,
+                second_port_id,
+            ):
+                # The two ports are not connected
+                error_type = self.NO_CONNECTION
+            else:
+                # Make connection
+                first_device.inputs[first_port_id] = None
+                error_type = self.NO_ERROR
+
+        elif first_port_id in first_device.outputs:
+            if second_port_id in second_device.outputs:
+                # Both ports are outputs
+                error_type = self.OUTPUT_TO_OUTPUT
+            elif second_port_id in second_device.inputs:
+                if first_device.inputs[first_port_id] != (
+                    second_device_id,
+                    second_port_id,
+                ):
+                    # The two ports are not connected
+                    error_type = self.NO_CONNECTION
+                else:
+                    second_device.inputs[second_port_id] = None
                     error_type = self.NO_ERROR
             else:
                 error_type = self.PORT_ABSENT
@@ -351,9 +406,7 @@ class Network:
             device = self.devices.get_device(device_id)
             if device.clock_counter == device.clock_half_period:
                 device.clock_counter = 0
-                output_signal = self.get_output_signal(
-                    device_id, output_id=None
-                )
+                output_signal = self.get_output_signal(device_id, output_id=None)
                 if output_signal == self.devices.HIGH:
                     device.outputs[None] = self.devices.FALLING
                 elif output_signal == self.devices.LOW:
@@ -404,9 +457,7 @@ class Network:
                 ):
                     return False
             for device_id in or_devices:  # execute OR gate devices
-                if not self.execute_gate(
-                    device_id, self.devices.LOW, self.devices.LOW
-                ):
+                if not self.execute_gate(device_id, self.devices.LOW, self.devices.LOW):
                     return False
             for device_id in nand_devices:  # execute NAND gate devices
                 if not self.execute_gate(

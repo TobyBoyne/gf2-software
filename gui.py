@@ -28,6 +28,8 @@ from network import Network
 from parse import Parser
 from scanner import Scanner
 
+# TODO return to 0, 0 on the canvas with a button?
+# TODO go to end?
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -524,6 +526,27 @@ class Gui(wx.Frame):
         elif len(self.monitored_list) > 1:
             self.monitor_toggles.SetCheckedItems(range(len(self.monitored_list)))
 
+        # Connection list (also on sidebar, but a bit weird)
+        self.output_names = []
+        self.output_ids = []
+        for device_id in self.devices.find_devices():
+            device = self.devices.get_device(device_id)
+            for output_id in device.inputs:
+                self.output_ids.append(output_id)
+                output_name = self.devices.get_signal_name(device_id, output_id)
+                self.output_names.append(output_name)
+
+        self.connect_window = wx.ScrolledWindow(self, id=wx.ID_ANY, name="Connections")
+        self.connect_sizer = wx.BoxSizer(wx.VERTICAL)
+        for device_id in self.devices.find_devices():
+            device = self.devices.get_device(device_id)
+            for input_id in device.inputs:
+                input_name = self.devices.get_signal_name(device_id, input_id)
+                self.connect_sizer.Add(wx.StaticText(self.connect_window, label=input_name))
+                self.connect_sizer.Add(wx.ComboBox(self.connect_window, choices=self.output_names))
+
+        self.connect_window.SetSizer(self.connect_sizer)
+
         # Bind events to widgets
         self.Bind(wx.EVT_MENU, self.on_menu)
         self.spin.Bind(wx.EVT_SPINCTRL, self.on_spin)
@@ -561,6 +584,7 @@ class Gui(wx.Frame):
         side_sizer.Add(self.switch_toggles, wx.EXPAND, 1, 1)
         side_sizer.Add(self.monitor_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
         side_sizer.Add(self.monitor_toggles, wx.EXPAND, 1, 1)
+        side_sizer.Add(self.connect_sizer, wx.EXPAND, 1, wx.TOP, 10)
         self.switch_toggles.SetMaxSize(wx.Size(120, 500))
         self.monitor_toggles.SetMaxSize(wx.Size(120, 500))
         self.switch_toggles.SetMinSize(wx.Size(120, 100))
@@ -579,7 +603,7 @@ class Gui(wx.Frame):
         if Id == wx.ID_ABOUT:
             wx.MessageBox(
                 "Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
-                "Group 19 \\ im475 --- tjad2  --- tjb94\n2022",
+                "Group 19 - im475 --- tjad2  --- tjb94\n2022",
                 "About Logsim",
                 wx.ICON_INFORMATION | wx.OK,
             )
@@ -611,6 +635,8 @@ class Gui(wx.Frame):
                 "\ns X N     - set switch X to N (0 or 1)"
                 "\nm X       - set a monitor on signal X"
                 "\nz X       - zap the monitor on signal X"
+                "\nl X Y     - connect output X to input Y"
+                "\nx X Y     - discconnect output X from input Y"
                 "\nh         - help (this command)"
                 "\nq         - quit the program",
                 "Command Help",
@@ -787,6 +813,10 @@ class Gui(wx.Frame):
                 self.run_command()
             elif command == "c":
                 self.continue_command()
+            elif command == "l":
+                self.connect_command()
+            elif command == "x":
+                self.disconnect_command()
             elif command == "q":
                 self.Close(True)
             else:
@@ -896,6 +926,8 @@ class Gui(wx.Frame):
         print("s X N     - set switch X to N (0 or 1)")
         print("m X       - set a monitor on signal X")
         print("z X       - zap the monitor on signal X")
+        print("l X Y     - connect output X to input Y")
+        print("x X Y     - discconnect output X from input Y")
         print("h         - help (this command)")
         print("q         - quit the program")
 
@@ -1009,7 +1041,7 @@ class Gui(wx.Frame):
         """Continue a previously run simulation."""
         if cycles == "Read text":
             cycles = self.read_number(0, None)
-        elif type(cycles) != int or cycles <= 0:
+        elif not isinstance(cycles, int) or cycles <= 0:
             print("Invalid number of cycles (must be integer). Enter 'h' for help.")
             cycles = None  # Will stop the continue_command here
         if cycles is not None:  # if the number of cycles provided is valid
@@ -1030,6 +1062,42 @@ class Gui(wx.Frame):
                 )
                 self.canvas.on_paint(0)
 
+    def connect_command(self, start="Read text", end="Read text"):
+        """Create a connection between an output and input"""
+        if start == "Read text":
+            start = self.read_signal_name()
+            [start_device, start_port] = start
+        else:
+            [start_device, start_port] = self.id_from_name(start)
+        if end == "Read text":
+            end = self.read_signal_name()
+            [end_device, end_port] = end
+        else:
+            [end_device, end_port] = self.id_from_name(end)
+        # Now we have the port ids that are involved
+        error = self.network.make_connection(start_device, start_port, end_device, end_port)
+        print(self.network.NO_ERROR, error)
+        if error == self.network.NO_ERROR:
+            print("Connection successfully made")
+
+
+    def disconnect_command(self, start="Read text", end="Read text"):
+        """Cut a connection between an output and input"""
+        if start == "Read text":
+            start = self.read_signal_name()
+            [start_device, start_port] = start
+        else:
+            [start_device, start_port] = self.id_from_name(start)
+        if end == "Read text":
+            end = self.read_signal_name()
+            [end_device, end_port] = end
+        else:
+            [end_device, end_port] = self.id_from_name(end)
+        # Now we have the port ids that are involved
+        error = self.network.remove_connection(start_device, start_port, end_device, end_port)
+        print(self.network.NO_ERROR, error)
+        if error == self.network.NO_ERROR:
+            print("Connection successfully cut")
 
 class MonitorSetDialog(wx.Dialog):
     "Used to modify monitor trace settings"
