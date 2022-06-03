@@ -20,7 +20,6 @@ import wx.lib.buttons
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
-from zmq import device
 
 from devices import Devices
 from monitors import Monitors
