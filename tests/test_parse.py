@@ -143,5 +143,3 @@ def test_parse_devicelist_raises_missing_keyword_error(parser):
     parser.next_symbol()
     parser.devicelist()
     assert parser.errorlog.contains_error(errorlog.MissingKeywordError)
-
-
