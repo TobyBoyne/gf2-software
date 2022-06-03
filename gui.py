@@ -16,7 +16,8 @@ from fileinput import filename
 import numpy as np
 import wx
 import wx.glcanvas as wxcanvas
-import wx.lib.buttons, wx.lib.scrolledpanel
+import wx.lib.buttons
+import wx.lib.scrolledpanel
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
@@ -30,6 +31,7 @@ from scanner import Scanner
 
 # TODO return to 0, 0 on the canvas with a button?
 # TODO go to end?
+
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -548,22 +550,43 @@ class Gui(wx.Frame):
         for device_id in self.devices.find_devices():
             device = self.devices.get_device(device_id)
             for input_id in device.inputs:
-                self.input_names.append(self.devices.get_signal_name(device_id, input_id))
+                self.input_names.append(
+                    self.devices.get_signal_name(device_id, input_id)
+                )
                 self.connection_row_sizer.append(wx.BoxSizer(wx.HORIZONTAL))
-                self.connection_boxes.append(wx.ComboBox(self.connect_window, choices=self.output_names, style = wx.CB_READONLY))
+                self.connection_boxes.append(
+                    wx.ComboBox(
+                        self.connect_window,
+                        choices=self.output_names,
+                        style=wx.CB_READONLY,
+                    )
+                )
                 self.connection_row_sizer[row].Add(self.connection_boxes[row])
-                self.connection_target_titles.append(wx.StaticText(self.connect_window, label="".join([" -> ", self.input_names[row]])))
+                self.connection_target_titles.append(
+                    wx.StaticText(
+                        self.connect_window,
+                        label="".join([" -> ", self.input_names[row]]),
+                    )
+                )
                 self.connection_row_sizer[row].Add(self.connection_target_titles[row])
                 self.connect_sizer.Add(self.connection_row_sizer[row])
                 # Now get the signal that goes to that input from the definition file
                 corresponding_output_ids = device.inputs[input_id]
-                corresponding_device_name = self.names.get_name_string(corresponding_output_ids[0])
+                corresponding_device_name = self.names.get_name_string(
+                    corresponding_output_ids[0]
+                )
                 if corresponding_output_ids[1] is not None:
-                    corresponding_port_name = self.names.get_name_string(corresponding_output_ids[1])
-                    corresponding_output_name = ".".join([corresponding_device_name, corresponding_port_name])
+                    corresponding_port_name = self.names.get_name_string(
+                        corresponding_output_ids[1]
+                    )
+                    corresponding_output_name = ".".join(
+                        [corresponding_device_name, corresponding_port_name]
+                    )
                 else:
                     corresponding_output_name = corresponding_device_name
-                corresponding_output_index = self.output_names.index(corresponding_output_name)
+                corresponding_output_index = self.output_names.index(
+                    corresponding_output_name
+                )
                 self.connection_boxes[row].SetSelection(corresponding_output_index)
                 # Bind events to the boxes
                 self.connection_boxes[row].Bind(wx.EVT_COMBOBOX, self.on_conbox)
@@ -664,10 +687,9 @@ class Gui(wx.Frame):
                 "\ns X N     - set switch X to N (0 or 1)"
                 "\nm X       - set a monitor on signal X"
                 "\nz X       - zap the monitor on signal X"
-                #"\nl X Y     - connect output X to input Y"
-                #"\nx X Y     - discconnect output X from input Y"
-                "\nh         - help (this command)"
-                "\nq         - quit the program",
+                # "\nl X Y     - connect output X to input Y"
+                # "\nx X Y     - discconnect output X from input Y"
+                "\nh         - help (this command)" "\nq         - quit the program",
                 "Command Help",
                 wx.ICON_INFORMATION | wx.OK,
             )
@@ -730,7 +752,9 @@ class Gui(wx.Frame):
                 self.connection_boxes[connection].SetBackgroundColour(self.windowcolour)
                 self.connection_boxes[connection].Refresh()
                 # The dropdown gets recoloured but the box itself doesn't, potential FIXME?
-                self.connection_target_titles[connection].SetForegroundColour(self.textcolour)
+                self.connection_target_titles[connection].SetForegroundColour(
+                    self.textcolour
+                )
             # These last two are only used on Linux, the above section only on Windows
             self.switch_toggles.SetForegroundColour(self.textcolour)
             self.monitor_toggles.SetForegroundColour(self.textcolour)
@@ -847,7 +871,17 @@ class Gui(wx.Frame):
         self.connect_command(new_output_name, input_name)
         # Check circuit for completeness
         if self.network.check_network():
-            print("".join([input_name, " now connected to ", new_output_name, ", not ", old_output_name]))
+            print(
+                "".join(
+                    [
+                        input_name,
+                        " now connected to ",
+                        new_output_name,
+                        ", not ",
+                        old_output_name,
+                    ]
+                )
+            )
         else:
             print("One or more inputs in the network are missing a connection")
             # Again this shouldn't happen with this method, might remove these later
@@ -890,9 +924,9 @@ class Gui(wx.Frame):
                 self.run_command()
             elif command == "c":
                 self.continue_command()
-            #elif command == "l":
+            # elif command == "l":
             #    self.connect_command()
-            #elif command == "x":
+            # elif command == "x":
             #    self.disconnect_command()
             elif command == "q":
                 self.Close(True)
@@ -1003,8 +1037,8 @@ class Gui(wx.Frame):
         print("s X N     - set switch X to N (0 or 1)")
         print("m X       - set a monitor on signal X")
         print("z X       - zap the monitor on signal X")
-        #print("l X Y     - connect output X to input Y")
-        #print("x X Y     - discconnect output X from input Y")
+        # print("l X Y     - connect output X to input Y")
+        # print("x X Y     - discconnect output X from input Y")
         print("h         - help (this command)")
         print("q         - quit the program")
 
@@ -1141,6 +1175,9 @@ class Gui(wx.Frame):
 
     def connect_command(self, start="Read text", end="Read text"):
         """Create a connection between an output and input"""
+        # For this and disconnect_command, the "Read text" part is from when there was an option to execute this from the
+        # command input, although this has since been removed as it was not very intuitive and could be a trap for
+        # inexperienced users
         if start == "Read text":
             start = self.read_signal_name()
             [start_device, start_port] = start
@@ -1152,7 +1189,9 @@ class Gui(wx.Frame):
         else:
             [end_device, end_port] = self.id_from_name(end)
         # Now we have the port ids that are involved
-        error = self.network.make_connection(start_device, start_port, end_device, end_port)
+        error = self.network.make_connection(
+            start_device, start_port, end_device, end_port
+        )
         if error == self.network.NO_ERROR:
             print("Connection successfully made")
         else:
@@ -1162,7 +1201,7 @@ class Gui(wx.Frame):
             print("Network is complete and ready to run.")
         else:
             print("One or more inputs in the network are missing a connection.")
-        
+
     # TODO More descriptive errors for connect_command and disconnect command??? (at least remove the number-based errors)
 
     def disconnect_command(self, start="Read text", end="Read text"):
@@ -1178,13 +1217,18 @@ class Gui(wx.Frame):
         else:
             [end_device, end_port] = self.id_from_name(end)
         # Now we have the port ids that are involved
-        error = self.network.remove_connection(end_device, end_port, start_device, start_port)
+        error = self.network.remove_connection(
+            end_device, end_port, start_device, start_port
+        )
         if error == self.network.NO_ERROR:
             print("Connection successfully cut")
         else:
             print(self.network.NO_ERROR, error)
         if start == "Read text":
-            print("Network is incomplete, please connect something to the disconnected input before running.")
+            print(
+                "Network is incomplete, please connect something to the disconnected input before running."
+            )
+
 
 class MonitorSetDialog(wx.Dialog):
     "Used to modify monitor trace settings"
