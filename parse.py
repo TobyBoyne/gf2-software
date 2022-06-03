@@ -206,7 +206,8 @@ class Parser:
                         if not 1 < device_property <= 16:
                             raise (
                                 errorlog.OutOfBoundsError(
-                                    "Number of inputs must be between 1 and 16 inclusive."
+                                    "Number of inputs must be between 1 and 16"
+                                    "inclusive."
                                 )
                             )
                         self.next_symbol()
@@ -218,7 +219,8 @@ class Parser:
                         else:
                             raise (
                                 errorlog.MissingKeywordError(
-                                    "Number of inputs must be followed by keyword INPUTS"
+                                    "Number of inputs must be followed by keyword"
+                                    "INPUTS"
                                 )
                             )
 
@@ -246,6 +248,13 @@ class Parser:
             if self.symbol.type == Scanner.ARROW:
                 self.next_symbol()
                 in_device_id, in_port_id = self.inputname()
+                in_device = self.devices.get_device(in_device_id)
+                if in_device.inputs[in_port_id] is not None:
+                    # Input is already in a connection
+                    raise errorlog.MultipleConnectionError(
+                        "This input has an existing connection - each input can only be"
+                        "connected to a single output."
+                    )
             else:
                 raise (
                     errorlog.PunctuationError(
