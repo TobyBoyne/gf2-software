@@ -122,3 +122,7 @@ class ErrorLog:
             error_name = err.name()
             counts[error_name] = counts.get(error_name, 0) + 1
         return counts
+
+    def contains_error(self, error_type: CustomException):
+        """Returns True if the error of the given type has been raised"""
+        return any(isinstance(err, error_type) for err in self.errors)
