@@ -16,7 +16,7 @@ from fileinput import filename
 import numpy as np
 import wx
 import wx.glcanvas as wxcanvas
-import wx.lib.buttons
+import wx.lib.buttons, wx.lib.scrolledpanel
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
@@ -525,25 +525,51 @@ class Gui(wx.Frame):
             self.monitor_toggles.Check(0)
         elif len(self.monitored_list) > 1:
             self.monitor_toggles.SetCheckedItems(range(len(self.monitored_list)))
+        self.connect_title = wx.StaticText(self, wx.ID_ANY, "Connections")
 
         # Connection list (also on sidebar, but a bit weird)
         self.output_names = []
         self.output_ids = []
         for device_id in self.devices.find_devices():
             device = self.devices.get_device(device_id)
-            for output_id in device.inputs:
+            for output_id in device.outputs:
                 self.output_ids.append(output_id)
                 output_name = self.devices.get_signal_name(device_id, output_id)
                 self.output_names.append(output_name)
 
         self.connect_window = wx.ScrolledWindow(self, id=wx.ID_ANY, name="Connections")
+        self.connect_window.SetBackgroundColour(self.windowcolour)
         self.connect_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.connection_row_sizer = []
+        self.connection_boxes = []
+        self.connection_target_titles = []
+        self.input_names = []
+        row = 0
         for device_id in self.devices.find_devices():
             device = self.devices.get_device(device_id)
             for input_id in device.inputs:
-                input_name = self.devices.get_signal_name(device_id, input_id)
-                self.connect_sizer.Add(wx.StaticText(self.connect_window, label=input_name))
-                self.connect_sizer.Add(wx.ComboBox(self.connect_window, choices=self.output_names))
+                self.input_names.append(self.devices.get_signal_name(device_id, input_id))
+                self.connection_row_sizer.append(wx.BoxSizer(wx.HORIZONTAL))
+                self.connection_boxes.append(wx.ComboBox(self.connect_window, choices=self.output_names, style = wx.CB_READONLY))
+                self.connection_row_sizer[row].Add(self.connection_boxes[row])
+                self.connection_target_titles.append(wx.StaticText(self.connect_window, label="".join([" -> ", self.input_names[row]])))
+                self.connection_row_sizer[row].Add(self.connection_target_titles[row])
+                self.connect_sizer.Add(self.connection_row_sizer[row])
+                # Now get the signal that goes to that input from the definition file
+                corresponding_output_ids = device.inputs[input_id]
+                corresponding_device_name = self.names.get_name_string(corresponding_output_ids[0])
+                if corresponding_output_ids[1] is not None:
+                    corresponding_port_name = self.names.get_name_string(corresponding_output_ids[1])
+                    corresponding_output_name = ".".join([corresponding_device_name, corresponding_port_name])
+                else:
+                    corresponding_output_name = corresponding_device_name
+                corresponding_output_index = self.output_names.index(corresponding_output_name)
+                self.connection_boxes[row].SetSelection(corresponding_output_index)
+                # Bind events to the boxes
+                self.connection_boxes[row].Bind(wx.EVT_COMBOBOX, self.on_conbox)
+                self.connection_boxes[row].Bind(wx.EVT_MOUSEWHEEL, self.do_nothing)
+                row += 1
+        self.connect_window.SetScrollbars(20, 20, 50, 50)
 
         self.connect_window.SetSizer(self.connect_sizer)
 
@@ -584,11 +610,14 @@ class Gui(wx.Frame):
         side_sizer.Add(self.switch_toggles, wx.EXPAND, 1, 1)
         side_sizer.Add(self.monitor_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
         side_sizer.Add(self.monitor_toggles, wx.EXPAND, 1, 1)
-        side_sizer.Add(self.connect_sizer, wx.EXPAND, 1, wx.TOP, 10)
+        side_sizer.Add(self.connect_title, 1, wx.ALIGN_CENTER | wx.TOP, 10)
+        side_sizer.Add(self.connect_window, wx.EXPAND, 1, 1)
         self.switch_toggles.SetMaxSize(wx.Size(120, 500))
         self.monitor_toggles.SetMaxSize(wx.Size(120, 500))
+        self.connect_window.SetMaxSize(wx.Size(120, 500))
         self.switch_toggles.SetMinSize(wx.Size(120, 100))
         self.monitor_toggles.SetMinSize(wx.Size(120, 100))
+        self.connect_window.SetMinSize(wx.Size(120, 100))
 
         self.SetSizeHints(600, 600)
         self.SetSizer(main_sizer)
@@ -635,8 +664,8 @@ class Gui(wx.Frame):
                 "\ns X N     - set switch X to N (0 or 1)"
                 "\nm X       - set a monitor on signal X"
                 "\nz X       - zap the monitor on signal X"
-                "\nl X Y     - connect output X to input Y"
-                "\nx X Y     - discconnect output X from input Y"
+                #"\nl X Y     - connect output X to input Y"
+                #"\nx X Y     - discconnect output X from input Y"
                 "\nh         - help (this command)"
                 "\nq         - quit the program",
                 "Command Help",
@@ -694,6 +723,14 @@ class Gui(wx.Frame):
             for monitor in range(len(self.all_monitors)):
                 self.monitor_toggles.SetItemBackgroundColour(monitor, self.windowcolour)
                 self.monitor_toggles.SetItemForegroundColour(monitor, self.textcolour)
+            self.connect_title.SetForegroundColour(self.textcolour)
+            self.connect_window.SetBackgroundColour(self.windowcolour)
+            for connection in range(len(self.connection_boxes)):
+                self.connection_boxes[connection].SetForegroundColour(self.textcolour)
+                self.connection_boxes[connection].SetBackgroundColour(self.windowcolour)
+                self.connection_boxes[connection].Refresh()
+                # The dropdown gets recoloured but the box itself doesn't, potential FIXME?
+                self.connection_target_titles[connection].SetForegroundColour(self.textcolour)
             # These last two are only used on Linux, the above section only on Windows
             self.switch_toggles.SetForegroundColour(self.textcolour)
             self.monitor_toggles.SetForegroundColour(self.textcolour)
@@ -779,6 +816,46 @@ class Gui(wx.Frame):
                 "Something has gone wrong: the monitor list doesn't seem to be reading correctly."
             )  # This really shouldn't ever happen
 
+    def on_conbox(self, event):
+        """Handle the event when the entry of a connection box is changed"""
+        input_box = event.GetEventObject()
+        input_index = self.connection_boxes.index(input_box)
+        input_name = self.input_names[input_index]
+        if "." in input_name:
+            [input_device_name, input_port_name] = input_name.split(".")
+            input_device_id = self.names.query(input_device_name)
+            input_port_id = self.names.query(input_port_name)
+        else:
+            input_device_id = self.names.query(input_device_name)
+            input_port_id = None
+            # This case shouldn't come up, this is here just in case
+        input_device = self.devices.get_device(input_device_id)
+        # Get old connection
+        old_output_ids = input_device.inputs[input_port_id]
+        old_device_name = self.names.get_name_string(old_output_ids[0])
+        if old_output_ids[1] is not None:
+            old_port_name = self.names.get_name_string(old_output_ids[1])
+            old_output_name = ".".join([old_device_name, old_port_name])
+        else:
+            old_output_name = old_device_name
+        # Break old connection
+        self.disconnect_command(old_output_name, input_name)
+        # Get new connection
+        new_output_index = event.GetSelection()
+        new_output_name = self.output_names[new_output_index]
+        # Create new connection
+        self.connect_command(new_output_name, input_name)
+        # Check circuit for completeness
+        if self.network.check_network():
+            print("".join([input_name, " now connected to ", new_output_name, ", not ", old_output_name]))
+        else:
+            print("One or more inputs in the network are missing a connection")
+            # Again this shouldn't happen with this method, might remove these later
+
+    def do_nothing(self, event):
+        """Does nothing to stop scrolling on boxes from rapidly changing connections"""
+        pass
+
     # Get signal (& port) ids from their names
     def id_from_name(self, name):
         parts = name.split(".", 1)
@@ -813,10 +890,10 @@ class Gui(wx.Frame):
                 self.run_command()
             elif command == "c":
                 self.continue_command()
-            elif command == "l":
-                self.connect_command()
-            elif command == "x":
-                self.disconnect_command()
+            #elif command == "l":
+            #    self.connect_command()
+            #elif command == "x":
+            #    self.disconnect_command()
             elif command == "q":
                 self.Close(True)
             else:
@@ -926,8 +1003,8 @@ class Gui(wx.Frame):
         print("s X N     - set switch X to N (0 or 1)")
         print("m X       - set a monitor on signal X")
         print("z X       - zap the monitor on signal X")
-        print("l X Y     - connect output X to input Y")
-        print("x X Y     - discconnect output X from input Y")
+        #print("l X Y     - connect output X to input Y")
+        #print("x X Y     - discconnect output X from input Y")
         print("h         - help (this command)")
         print("q         - quit the program")
 
@@ -1076,10 +1153,17 @@ class Gui(wx.Frame):
             [end_device, end_port] = self.id_from_name(end)
         # Now we have the port ids that are involved
         error = self.network.make_connection(start_device, start_port, end_device, end_port)
-        print(self.network.NO_ERROR, error)
         if error == self.network.NO_ERROR:
             print("Connection successfully made")
-
+        else:
+            print(self.network.NO_ERROR, error)
+        # Check circuit for completeness
+        if self.network.check_network():
+            print("Network is complete and ready to run.")
+        else:
+            print("One or more inputs in the network are missing a connection.")
+        
+    # TODO More descriptive errors for connect_command and disconnect command??? (at least remove the number-based errors)
 
     def disconnect_command(self, start="Read text", end="Read text"):
         """Cut a connection between an output and input"""
@@ -1094,10 +1178,13 @@ class Gui(wx.Frame):
         else:
             [end_device, end_port] = self.id_from_name(end)
         # Now we have the port ids that are involved
-        error = self.network.remove_connection(start_device, start_port, end_device, end_port)
-        print(self.network.NO_ERROR, error)
+        error = self.network.remove_connection(end_device, end_port, start_device, start_port)
         if error == self.network.NO_ERROR:
             print("Connection successfully cut")
+        else:
+            print(self.network.NO_ERROR, error)
+        if start == "Read text":
+            print("Network is incomplete, please connect something to the disconnected input before running.")
 
 class MonitorSetDialog(wx.Dialog):
     "Used to modify monitor trace settings"
