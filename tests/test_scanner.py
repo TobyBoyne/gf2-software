@@ -1,5 +1,5 @@
-"""Test the scanner module.
-Each test requires a new scanner and file, so fixtures are not used."""
+"""Test the scanner module."""
+
 import pytest
 import string
 
@@ -25,7 +25,7 @@ def new_file(tmpdir, file_contents):
 
 
 def test_file_errors(names):
-    """Test that FileNotFoundError error is raised if the file does not exist."""
+    """Test that FileNotFoundError is raised if the file does not exist."""
     with pytest.raises(FileNotFoundError):
         Scanner("definitely_not_a_file.txt", names)
 
@@ -35,7 +35,7 @@ generate_test_files = ["DEVICE A: AND 1 INPUTS;", "CONNECT B -> C"]
 
 @pytest.mark.parametrize("file_contents", generate_test_files)
 def test_write_new_file(file_contents, tmpdir):
-    """Test if the scanner correctly raises an error."""
+    """Test if the scanner correctly create a temporary file."""
     new_file(tmpdir, file_contents)
 
 
@@ -68,6 +68,7 @@ symbol_test_files = [("DEVICE", 5, 0), ("MONITOR", 5, 2), ("CLK1:", 7, 4), (";",
 
 @pytest.mark.parametrize("file_contents, expected_type, expected_id", symbol_test_files)
 def test_scanner_get_symbol(file_contents, expected_type, expected_id, tmpdir, names):
+    """Test if the scanner captures the correct symbol."""
     path = new_file(tmpdir, file_contents)
     scanner = Scanner(path, names)
     symbol = scanner.get_symbol()
