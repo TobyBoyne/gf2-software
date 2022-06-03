@@ -126,7 +126,6 @@ class Network:
 
         if first_device is None or second_device is None:
             error_type = self.DEVICE_ABSENT
-
         elif first_port_id in first_device.inputs:
             if first_device.inputs[first_port_id] is not None:
                 # Input is already in a connection
@@ -285,8 +284,8 @@ class Network:
 
         The rule is: if all its inputs are x, then its output is y, else its
         output is the inverse of y.
-        Note: (x,y) pairs for AND, OR, NOR, NAND, XOR are: (HIGH, HIGH), (LOW,
-        LOW), (LOW, HIGH), (HIGH, LOW), (None, None).
+        Note: (x,y) pairs for AND, OR, NOR, NAND, XOR, NOT are: (HIGH, HIGH), (LOW,
+        LOW), (LOW, HIGH), (HIGH, LOW), (None, None), (None, None).
         Return True if successful.
         """
         device = self.devices.get_device(device_id)
@@ -309,6 +308,10 @@ class Network:
                 output_signal = self.devices.LOW
             else:
                 output_signal = self.devices.HIGH
+
+        elif device.device_kind == self.devices.NOT:
+            # Output is the inverted input
+            output_signal = self.invert_signal(input_signal_list[0])
 
         # Update and store the new signal
         signal = self.get_output_signal(device_id, None)
@@ -423,6 +426,7 @@ class Network:
         nand_devices = self.devices.find_devices(self.devices.NAND)
         nor_devices = self.devices.find_devices(self.devices.NOR)
         xor_devices = self.devices.find_devices(self.devices.XOR)
+        not_devices = self.devices.find_devices(self.devices.NOT)
 
         # This sets clock signals to RISING or FALLING, where necessary
         self.update_clocks()
@@ -466,6 +470,9 @@ class Network:
                 ):
                     return False
             for device_id in xor_devices:  # execute XOR devices
+                if not self.execute_gate(device_id, None, None):
+                    return False
+            for device_id in not_devices:  # execute NOT devices
                 if not self.execute_gate(device_id, None, None):
                     return False
             if self.steady_state:
