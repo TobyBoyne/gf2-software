@@ -600,6 +600,8 @@ class Gui(wx.Frame):
                 "\ns X N     - set switch X to N (0 or 1)"
                 "\nm X       - set a monitor on signal X"
                 "\nz X       - zap the monitor on signal X"
+                "\nl X Y     - connect output X to input Y"
+                "\nl X Y     - discconnect output X from input Y"
                 "\nh         - help (this command)"
                 "\nq         - quit the program",
                 "Command Help",
@@ -778,6 +780,10 @@ class Gui(wx.Frame):
                 self.run_command()
             elif command == "c":
                 self.continue_command()
+            elif command == "l":
+                self.connect_command()
+            elif command == "x":
+                self.disconnect_command()
             elif command == "q":
                 self.Close(True)
             else:
@@ -889,6 +895,8 @@ class Gui(wx.Frame):
         print("s X N     - set switch X to N (0 or 1)")
         print("m X       - set a monitor on signal X")
         print("z X       - zap the monitor on signal X")
+        print("l X Y     - connect output X to input Y")
+        print("l X Y     - discconnect output X from input Y")
         print("h         - help (this command)")
         print("q         - quit the program")
 
@@ -984,6 +992,23 @@ class Gui(wx.Frame):
                 )
                 self.canvas.on_paint(0)
 
+    def connect_command(self, start="Read text", end="Read text"):
+        """Create a connection between an output and input"""
+        
+
+        
+        switch_id = self.read_name()
+        if switch_id is not None:
+            switch_state = self.read_number(0, 1)
+            if switch_state is not None:
+                if self.devices.set_switch(switch_id, switch_state):
+                    print("Successfully set switch.")
+                else:
+                    print("Error! Invalid switch.")
+
+
+    def disconnect_command(self, start="Read text", end="Read text"):
+        """Cut a connection between an output and input"""
 
 # TODO Open a file browser to select definition file
 # TODO Allow comments to be added at the end of the definition file?
