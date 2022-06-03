@@ -99,7 +99,9 @@ class Parser:
                 else:
                     raise errorlog.PunctuationError("Expected list to end in semicolon")
             else:
-                raise errorlog.MissingKeywordError("Expected device list")
+                raise errorlog.MissingKeywordError(
+                    "Expected device list to begin with DEVICE"
+                )
         except errorlog.CustomException as err:
             self.error(err, stopping_symbols=(Scanner.SEMICOLON,))
 
@@ -121,7 +123,9 @@ class Parser:
                 else:
                     raise errorlog.PunctuationError("Expected list to end in semicolon")
             else:
-                raise errorlog.MissingKeywordError("Expected connection list")
+                raise errorlog.MissingKeywordError(
+                    "Expected connection list to begin with CONNECT"
+                )
         except errorlog.CustomException as err:
             self.error(err, stopping_symbols=(Scanner.SEMICOLON,))
 
@@ -145,7 +149,11 @@ class Parser:
                         errorlog.PunctuationError("Expected list to end in semicolon")
                     )
             else:
-                raise (errorlog.MissingKeywordError("Expected monitor list"))
+                raise (
+                    errorlog.MissingKeywordError(
+                        "Expected monitor list to begin with MONITOR"
+                    )
+                )
         except errorlog.CustomException as err:
             self.error(err, stopping_symbols=(Scanner.SEMICOLON,))
 
@@ -225,7 +233,17 @@ class Parser:
                             )
 
                 else:
-                    raise (errorlog.NameSyntaxError("Expected a valid device name"))
+                    # raise error, giving the invalid name if applicable
+                    device_name_msg = (
+                        f" (got {self.names.get_name_string(self.symbol.id)})"
+                        if self.symbol.type == Scanner.NAME
+                        else ""
+                    )
+                    raise (
+                        errorlog.NameSyntaxError(
+                            "Expected a valid device name" + device_name_msg
+                        )
+                    )
 
             else:
                 raise (errorlog.PunctuationError("Device definition requires a colon"))
@@ -307,7 +325,8 @@ class Parser:
 
         if self.devices.get_device(device_id) is None:
             raise errorlog.DeviceReferenceError(
-                "The device name has not been defined in the device list"
+                f"The device {self.names.get_name_string(device_id)} has not been"
+                f" defined in the device list"
             )
 
         self.next_symbol()
@@ -330,7 +349,12 @@ class Parser:
                         return device_id, in_port_id
 
                     else:
-                        raise (errorlog.PortReferenceError("Must be a valid input"))
+                        raise (
+                            errorlog.PortReferenceError(
+                                f"The input port must begin with I, followed by digits;"
+                                f" {input_string} is invalid"
+                            )
+                        )
             else:
                 raise (
                     errorlog.NameSyntaxError(
@@ -346,7 +370,8 @@ class Parser:
 
         if self.devices.get_device(device_id) is None:
             raise errorlog.DeviceReferenceError(
-                "The device name has not been defined in the device list"
+                f"The device {self.names.get_name_string(device_id)} has not been"
+                f" defined in the device list"
             )
 
         self.next_symbol()
@@ -358,9 +383,14 @@ class Parser:
                     self.next_symbol()
                     return device_id, out_port_id
                 else:
-                    raise (errorlog.NameSyntaxError("Must be a valid output name"))
+                    raise (
+                        errorlog.NameSyntaxError(
+                            f"Output {self.names.get_name_string(self.symbol.id)} is"
+                            f" not a valid output name"
+                        )
+                    )
             else:
-                raise (errorlog.NameSyntaxError("Symbol must be a name"))
+                raise (errorlog.NameSyntaxError("Output must be an alphanumeric name"))
         else:
             return device_id, None
 
