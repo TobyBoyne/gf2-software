@@ -364,6 +364,14 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
         image.save(filepath)
 
+    def to_origin(self):
+        """Return to the origin"""
+        self.zoom = 1
+        self.pan_x = 0
+        self.pan_y = 0
+        self.init = False
+        self.on_paint(0)  # Repaint the canvas
+
 
 class Gui(wx.Frame):
     """Configure the main window and all the widgets.
@@ -440,7 +448,7 @@ class Gui(wx.Frame):
 
         # Log Box
         self.logstyle = wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL
-        self.log = wx.TextCtrl(self, wx.ID_ANY, size=(350, 300), style=self.logstyle)
+        self.log = wx.TextCtrl(self, wx.ID_ANY, size=(320, 300), style=self.logstyle)
         self.log.SetBackgroundColour(self.windowcolour)
         sys.stdout = self.log
         self.input_title = wx.StaticText(self, wx.ID_ANY, "Command Input")
@@ -448,6 +456,8 @@ class Gui(wx.Frame):
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
         )
         self.text_input.SetBackgroundColour(self.windowcolour)
+        self.canvas_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Reset Canvas")
+        self.canvas_button.SetBackgroundColour(self.windowcolour)
 
         # Configure the widgets
         self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
@@ -604,6 +614,7 @@ class Gui(wx.Frame):
         self.text_input.Bind(wx.EVT_TEXT_ENTER, self.on_text_input)
         self.switch_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_switch_check)
         self.monitor_toggles.Bind(wx.EVT_CHECKLISTBOX, self.on_monitor_check)
+        self.canvas_button.Bind(wx.EVT_BUTTON, self.on_canvas_reset)
 
         # Configure sizers for layout
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -618,6 +629,7 @@ class Gui(wx.Frame):
         log_sizer.Add(self.log, wx.EXPAND, 1, wx.TOP, 1)
         log_sizer.Add(input_sizer, 1, wx.LEFT | wx.TOP | wx.BOTTOM, 5)
 
+        input_sizer.Add(self.canvas_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         input_sizer.Add(self.input_title, 0, wx.ALIGN_CENTER | wx.ALL, 5)
         input_sizer.Add(self.text_input, 8, wx.EXPAND, 0)
         input_sizer.SetMinSize(150, 300)
@@ -728,6 +740,8 @@ class Gui(wx.Frame):
             self.text_input.SetBackgroundColour(self.windowcolour)
             self.text_input.SetForegroundColour(self.textcolour)
             self.input_title.SetForegroundColour(self.textcolour)
+            self.canvas_button.SetBackgroundColour(self.windowcolour)
+            self.canvas_button.SetForegroundColour(self.textcolour)
             # self.spin.SetBackgroundColour(self.windowcolour)   # This line doesn't work in Linux for no apparent reason so the spinner stands out a bit
             # self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
@@ -885,6 +899,10 @@ class Gui(wx.Frame):
         else:
             print("One or more inputs in the network are missing a connection")
             # Again this shouldn't happen with this method, might remove these later
+
+    def on_canvas_reset(self, event):
+        """Moves the canvas back to 0,0"""
+        self.canvas.to_origin()
 
     def do_nothing(self, event):
         """Does nothing to stop scrolling on boxes from rapidly changing connections"""
