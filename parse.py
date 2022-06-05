@@ -218,8 +218,8 @@ class Parser:
                         if not 1 < device_property <= 16:
                             raise (
                                 errorlog.OutOfBoundsError(
-                                    "Number of inputs must be between 1 and 16"
-                                    "inclusive."
+                                    f"Number of inputs must be between 1 and 16"
+                                    f" inclusive. Got {device_property} inputs instead"
                                 )
                             )
                         self.next_symbol()
@@ -235,6 +235,7 @@ class Parser:
                                     " INPUTS"
                                 )
                             )
+
                     else:
                         raise errorlog.DeviceDefinitionError(
                             "Gate must be followed by a number of inputs"

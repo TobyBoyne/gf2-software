@@ -1,0 +1,7 @@
+DEVICE G1: XOR,
+       CLK1: CLOCK 10;
+
+CONNECT CLK1 -> G1.I1;
+
+MONITOR CLK1,
+        G1;
