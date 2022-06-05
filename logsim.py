@@ -82,6 +82,9 @@ def main(arg_list):
             gui = Gui("Logic Simulator", path, names, devices, network, monitors)
             gui.Show(True)
             app.MainLoop()
+            app.Destroy()
+            if gui.new_path is not None:
+                main(arg_list=[gui.new_path])
 
 
 if __name__ == "__main__":

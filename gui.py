@@ -417,6 +417,8 @@ class Gui(wx.Frame):
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
         fileMenu.Append(wx.ID_ABOUT, "&?   About")
+        fileMenu.Append(wx.ID_OPEN, "&📁 Open File\tCtrl+O")
+        fileMenu.Append(wx.ID_REFRESH, "&🔃 Reload File\tCtrl+R")
         fileMenu.Append(wx.ID_FILE, "&…  Show Description\tCtrl+D")
         fileMenu.Append(wx.ID_SAVE, "&💾 Save Monitor Graphs\tCtrl+S")
         fileMenu.Append(wx.ID_EXIT, "&❌ Exit\tCtrl+Q")
@@ -432,6 +434,9 @@ class Gui(wx.Frame):
         settingsMenu.Append(wx.ID_SELECT_COLOR, "&◑ Toggle Dark Mode\tCtrl+T")
         settingsMenu.Append(wx.ID_SELECT_FONT, "&⎍  Modify Monitor Trace Settings")
         menuBar.Append(settingsMenu, "&Settings")
+
+        # Opening a new file
+        self.new_path = None
 
         self.SetMenuBar(menuBar)
 
@@ -659,6 +664,23 @@ class Gui(wx.Frame):
                 "About Logsim",
                 wx.ICON_INFORMATION | wx.OK,
             )
+        if Id == wx.ID_OPEN:
+            with wx.FileDialog(self, "Open TXT file", wildcard="TXT files (*.txt)|*.txt",
+                       style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return     # the user changed their mind
+
+                # Proceed loading the file chosen by the user
+                path = fileDialog.GetPath()
+
+                self.new_path = path
+                self.Close(True)
+
+        if Id == wx.ID_REFRESH:
+            self.new_path = self.path
+            self.Close(True)
+
         if Id == wx.ID_SAVE:
             ask = wx.TextEntryDialog(
                 self,
