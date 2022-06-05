@@ -104,11 +104,6 @@ class ErrorLog:
     def __call__(self, err: CustomException):
         self.errors.append(err)
 
-        # print(
-        #     f"{error_name}: {err} \n"
-        #     f" > error on line {err.cursor_line}, column {err.cursor_column}"
-        # )
-
     def no_errors(self):
         """Returns True if no errors have been raised"""
         return len(self.errors) == 0

@@ -165,7 +165,7 @@ class Scanner:
         else:
             pass
             # non-valid symbols are allowed in comments
-            # print(f"{self.cur} is not a valid symbol.")
+            # no need to raise an error here
 
         if symbol.type in (
             None,

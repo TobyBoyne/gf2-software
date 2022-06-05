@@ -67,8 +67,7 @@ class Parser:
         self.next_symbol()
         while self.symbol.type not in stopping_symbols + (Scanner.EOF,):
             self.next_symbol()
-            print(self.symbol.cursor_line, self.symbol.cursor_column)
-
+        
     def parse_network(self):
         """Parse the circuit definition file. Returns True if there are no
         errors in the circuit definition file."""
@@ -100,7 +99,8 @@ class Parser:
                     self.next_symbol()
                     self.comment()
                 else:
-                    raise errorlog.PunctuationError("Expected list to end in semicolon")
+                    raise errorlog.PunctuationError("Expected device list to end in a"
+                    " semicolon, or device to end in a comma")
             else:
                 raise errorlog.MissingKeywordError(
                     "Expected device list to begin with DEVICE"
@@ -124,8 +124,10 @@ class Parser:
                     self.comment()
                     self.next_symbol()
                 else:
-                    raise errorlog.PunctuationError("Expected list to end in semicolon")
+                    raise errorlog.PunctuationError("Expected connection list to end in a"
+                    " semicolon, or connection to end in a comma")
             else:
+                print(self.symbol)
                 raise errorlog.MissingKeywordError(
                     "Expected connection list to begin with CONNECT"
                 )
@@ -148,9 +150,8 @@ class Parser:
                     self.comment()
                     self.next_symbol()
                 else:
-                    raise (
-                        errorlog.PunctuationError("Expected list to end in semicolon")
-                    )
+                    raise errorlog.PunctuationError("Expected monitor list to end in a"
+                    " semicolon, or monitor to end in a comma")
             else:
                 raise (
                     errorlog.MissingKeywordError(
