@@ -67,7 +67,7 @@ class Parser:
         self.next_symbol()
         while self.symbol.type not in stopping_symbols + (Scanner.EOF,):
             self.next_symbol()
-        
+
     def parse_network(self):
         """Parse the circuit definition file. Returns True if there are no
         errors in the circuit definition file."""
@@ -99,8 +99,10 @@ class Parser:
                     self.next_symbol()
                     self.comment()
                 else:
-                    raise errorlog.PunctuationError("Expected device list to end in a"
-                    " semicolon, or device to end in a comma")
+                    raise errorlog.PunctuationError(
+                        "Expected device list to end in a"
+                        " semicolon, or device to end in a comma"
+                    )
             else:
                 raise errorlog.MissingKeywordError(
                     "Expected device list to begin with DEVICE"
@@ -124,8 +126,10 @@ class Parser:
                     self.comment()
                     self.next_symbol()
                 else:
-                    raise errorlog.PunctuationError("Expected connection list to end in a"
-                    " semicolon, or connection to end in a comma")
+                    raise errorlog.PunctuationError(
+                        "Expected connection list to end in a"
+                        " semicolon, or connection to end in a comma"
+                    )
             else:
                 print(self.symbol)
                 raise errorlog.MissingKeywordError(
@@ -150,8 +154,10 @@ class Parser:
                     self.comment()
                     self.next_symbol()
                 else:
-                    raise errorlog.PunctuationError("Expected monitor list to end in a"
-                    " semicolon, or monitor to end in a comma")
+                    raise errorlog.PunctuationError(
+                        "Expected monitor list to end in a"
+                        " semicolon, or monitor to end in a comma"
+                    )
             else:
                 raise (
                     errorlog.MissingKeywordError(
@@ -202,9 +208,10 @@ class Parser:
                             )
                         )
 
-                elif (
-                    self.symbol.type == Scanner.NAME
-                    and self.symbol.id == self.devices.D_TYPE
+                elif self.symbol.type == Scanner.NAME and self.symbol.id in (
+                    self.devices.D_TYPE,
+                    self.devices.NOT,
+                    self.devices.XOR,
                 ):
                     self.next_symbol()
 
