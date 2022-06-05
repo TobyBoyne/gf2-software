@@ -67,6 +67,7 @@ class Parser:
         self.next_symbol()
         while self.symbol.type not in stopping_symbols + (Scanner.EOF,):
             self.next_symbol()
+            print(self.symbol.cursor_line, self.symbol.cursor_column)
 
     def parse_network(self):
         """Parse the circuit definition file. Returns True if there are no
@@ -76,6 +77,8 @@ class Parser:
         self.devicelist()
         self.connectionlist()
         self.monitorlist()
+
+        self.errorlog.print_errors(self.scanner.path)
 
         return self.errorlog.no_errors()
 
@@ -228,9 +231,13 @@ class Parser:
                             raise (
                                 errorlog.MissingKeywordError(
                                     "Number of inputs must be followed by keyword"
-                                    "INPUTS"
+                                    " INPUTS"
                                 )
                             )
+                    else:
+                        raise errorlog.DeviceDefinitionError(
+                            "Gate must be followed by a number of inputs"
+                        )
 
                 else:
                     # raise error, giving the invalid name if applicable

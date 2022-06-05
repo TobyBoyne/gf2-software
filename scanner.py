@@ -30,12 +30,14 @@ class Symbol:
     No public methods.
     """
 
-    def __init__(self, scanner: 'Scanner'):
+    def __init__(self):
         """Initialise symbol properties."""
         self.type = None
         self.id = None
-        self.cursor_line = scanner.cursor_line
-        self.cursor_column = scanner.cursor_column
+
+    def set_cursor_pos(self, line, col):
+        self.cursor_line = line
+        self.cursor_column = col
 
     def __repr__(self):
         return f"S(type={self.type}, id={self.id})"
@@ -89,6 +91,7 @@ class Scanner:
         """Open specified file and initialise reserved words and IDs."""
 
         self.names = names
+        self.path = path
         self.file = open(path, "r")
 
         [
@@ -106,11 +109,15 @@ class Scanner:
     def advance(self):
         self.cursor_column += 1
         self.cur = self.file.read(1)
+        if self.cur == "\n":
+            self.cursor_column = 0
+            self.cursor_line += 1
 
     def get_symbol(self):
         """Translate the next sequence of characters into a symbol."""
-        symbol = Symbol(self)
+        symbol = Symbol()
         self.get_next_non_whitespace()
+        symbol.set_cursor_pos(self.cursor_line, self.cursor_column)
 
         # name
         if self.cur.isalpha():
@@ -133,7 +140,7 @@ class Scanner:
             if self.cur == ">":
                 symbol.type = Scanner.ARROW
             else:
-                print("Dash must be followed by an arrow")
+                symbol.type = None
 
         elif self.cur == ",":
             symbol.type = Scanner.COMMA
@@ -153,6 +160,7 @@ class Scanner:
         # eof
         elif self.cur == "":
             symbol.type = Scanner.EOF
+            self.file.close()
 
         else:
             pass
@@ -176,9 +184,6 @@ class Scanner:
         """Returns the next non-whitespace character in the file"""
         while self.cur is None or self.cur.isspace():
             self.advance()
-            if self.cur == "\n":
-                self.cursor_column = 0
-                self.cursor_line += 1
 
     def get_name(self) -> str:
         """Starting at a letter, return a name given by a sequence of

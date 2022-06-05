@@ -4,7 +4,7 @@ reporting and tracking errors in the file.
 CustomExceptions are used to prevent overlap with inbuilt Python Exceptions"""
 
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from scanner import Symbol
@@ -99,16 +99,15 @@ class ErrorLog:
         encountered in parsing the file"""
 
     def __init__(self):
-        self.errors = []
+        self.errors: List[CustomException] = []
 
     def __call__(self, err: CustomException):
         self.errors.append(err)
 
-        error_name = err.name()
-        print(
-            f"{error_name}: {err} \n"
-            f" > error on line {err.cursor_line}, column {err.cursor_column}"
-        )
+        # print(
+        #     f"{error_name}: {err} \n"
+        #     f" > error on line {err.cursor_line}, column {err.cursor_column}"
+        # )
 
     def no_errors(self):
         """Returns True if no errors have been raised"""
@@ -126,3 +125,18 @@ class ErrorLog:
     def contains_error(self, error_type: CustomException):
         """Returns True if the error of the given type has been raised"""
         return any(isinstance(err, error_type) for err in self.errors)
+
+    def print_errors(self, path):
+        """Print all the errors that occured during Parse, as well as their line position"""
+        with open(path, "r") as file:
+            lines = [l.strip("\n") for l in file.readlines()] + [""]
+
+            for err in self.errors:
+                line_str = lines[err.cursor_line - 1]
+                cursor_pos_str = f"(Ln {err.cursor_line}, Col {err.cursor_column})"
+
+                print(
+                    f"{err.name()}: {err}\n"
+                    f"{cursor_pos_str} {line_str}\n"
+                    f"{' '*len(cursor_pos_str)} {' '*err.cursor_column}^\n"
+                )
