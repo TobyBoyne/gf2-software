@@ -9,9 +9,9 @@ Classes:
 --------
 MyGLCanvas - handles all canvas drawing operations.
 Gui - configures the main window and all the widgets.
+MonitorSetDialog - special dialog box that is used to change monitor trace settings.
 """
 import sys
-from fileinput import filename
 
 import numpy as np
 import wx
@@ -21,16 +21,6 @@ import wx.lib.scrolledpanel
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
-
-from devices import Devices
-from monitors import Monitors
-from names import Names
-from network import Network
-from parse import Parser
-from scanner import Scanner
-
-# TODO return to 0, 0 on the canvas with a button?
-# TODO go to end?
 
 
 class MyGLCanvas(wxcanvas.GLCanvas):
@@ -49,9 +39,9 @@ class MyGLCanvas(wxcanvas.GLCanvas):
     --------------
     init_gl(self): Configures the OpenGL context.
 
-    render(self, text): Handles all drawing operations.
+    render(self, text): Renders the blank scene before the simulation is run.
 
-    on_paint(self, event): Handles the paint event.
+    on_paint(self, event): Handles the paint event, calls appropriate render.
 
     on_size(self, event): Handles the canvas resize event.
 
@@ -59,6 +49,15 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
     render_text(self, text, x_pos, y_pos): Handles text drawing
                                            operations.
+
+    render_monitors(self, x_pos, y_pos): Render the monitor traces.
+
+    toggledarkmode(self): Toggles dark mode on and off
+
+    save_image(self, filepath): Saves the canvas from 0,0 to the coordinate
+                                     of the top-right corner as an image
+
+    to_origin(self): Return to the origin
     """
 
     def __init__(self, parent, devices, monitors):
@@ -204,7 +203,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                 GLUT.glutBitmapCharacter(font, ord(character))
 
     def render_monitors(self, x_pos, y_pos):
-        "Render the monitor traces."
+        """Render the monitor traces."""
         self.SetCurrent(self.context)
         if not self.init:
             # Configure the viewport, modelview and projection matrices
@@ -247,9 +246,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
 
             # Background Lines & Names
             y = y_pos + index * (self.monitorheight + self.monitorspacing)
-            x = (
-                x_pos + self.fontsize * margin
-            )  # Can add in another multiplier here, depends on spacing between signal names and the traces
+            x = x_pos + self.fontsize * margin
             for line in range(len(signal_list) + 1):
                 # Linecolour is always a middle-grey
                 GL.glColor3f(*self.gridcolour)
@@ -282,17 +279,13 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                             y_pos
                             + (index + 1) * self.monitorheight
                             + index * self.monitorspacing
-                        )  # This shouldn't be necessary, just here for robustness
+                        )
                         x += self.monitorstep
                     if signal == self.devices.LOW:
-                        y = y_pos + index * (
-                            self.monitorheight + self.monitorspacing
-                        )  # This shouldn't be necessary, just here for robustness
+                        y = y_pos + index * (self.monitorheight + self.monitorspacing)
                         x += self.monitorstep
                     if signal == self.devices.RISING:
-                        y = y_pos + index * (
-                            self.monitorheight + self.monitorspacing
-                        )  # This shouldn't be necessary, just here for robustness
+                        y = y_pos + index * (self.monitorheight + self.monitorspacing)
                         x_last = x
                         x += self.monitorstep / 3
                         GL.glVertex2f(x_last, y)
@@ -305,7 +298,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                             y_pos
                             + (index + 1) * self.monitorheight
                             + index * self.monitorspacing
-                        )  # This shouldn't be necessary, just here for robustness
+                        )
                         x_last = x
                         x += self.monitorstep / 3
                         GL.glVertex2f(x_last, y)
@@ -316,7 +309,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
                     GL.glVertex2f(x_last, y)
                     GL.glVertex2f(x, y)
                 else:
-                    # Skips one step ahead without drawing a line between, might leave a dot?
+                    # Skips one step ahead without drawing a line between
                     x += self.monitorstep
 
             index += 1
@@ -328,6 +321,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.SwapBuffers()
 
     def toggledarkmode(self):
+        """Toggles dark mode on and off"""
         if self.textcolour == (0.0, 0.0, 0.0):
             # Now switching to dark mode
             self.textcolour = (1.0, 1.0, 1.0)  # Text is now white
@@ -342,6 +336,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.on_paint(0)  # Repaint the canvas
 
     def save_image(self, filepath):
+        """Saves the canvas from 0,0 to the coordinate of the top-right corner"""
         # Check the filepath is correct
         if "." in filepath:
             dot_index = filepath.find(".")
@@ -388,12 +383,72 @@ class Gui(wx.Frame):
     on_menu(self, event): Event handler for the file menu.
 
     on_spin(self, event): Event handler for when the user changes the spin
-                           control value.
+                          control value.
 
     on_run_button(self, event): Event handler for when the user clicks the run
                                 button.
 
-    on_text_box(self, event): Event handler for when the user enters text.
+    on_continue_button(self, event): Handle the event when the user clicks the
+                                     continue button.
+
+    on_switch_check(self, event): Handle the event when the user clicks one of
+                                  the switch checkboxes
+
+    on_monitor_check(self, event): Handle the event when the user clicks on one
+                                   of the monitor checkboxes
+
+    on_conbox(self, event): Handle the event when the entry of a connection box
+                            is changed
+
+    on_canvas_reset(self, event): Moves the canvas back to 0,0
+
+    do_nothing(self, event): Does nothing to stop scrolling on boxes from rapidly
+                             changing connections
+
+    id_from_name(self, name): Get the device and port ids from a DEVICE.PORT name string
+
+    on_text_input(self, event): Handle the event when the user enters text
+
+    read_command(self): Returns the first non-whitespace character.
+
+    get_character(self): Moves the cursor forward by one character in the user
+                         entry.
+
+    skip_spaces(self): Skips whitespace characters until a non-whitespace
+                       character is reached.
+
+    read_string(self): Returns the next alphanumeric string.
+
+    read_name(self): Returns the name ID of the current string.
+
+    read_signal_name(self): Returns the device and port IDs of the current
+                            signal name.
+
+    read_number(self, lower_bound, upper_bound): Returns the current number.
+
+    help_command(self): Prints a list of valid commands.
+
+    switch_command(self, level="Read text"): Sets the specified switch
+                                             to the specified signal level.
+
+    monitor_command(self): Sets the specified monitor.
+
+    read_portname(self): Reads the string name of the port entered
+
+    zap_command(self): Removes the specified monitor.
+
+    run_network(self, cycles): Runs the network for the specified number of
+                               simulation cycles.
+
+    run_command(self): Runs the simulation from scratch.
+
+    continue_command(self): Continues a previously run simulation.
+
+    connect_command(self, start="Read text", end="Read text"):
+                        Create a connection between an output and input
+
+    def disconnect_command(self, start="Read text", end="Read text"):
+                        Cut a connection between an output and input
     """
 
     def __init__(self, title, path, names, devices, network, monitors):
@@ -417,8 +472,8 @@ class Gui(wx.Frame):
         self.character = ""  # current character
         self.cursor = 0  # cursor position
 
-        # This is from the initialisation of userint.py and is required for lots of the simulation tasks
-        self.cycles_completed = 0  # number of simulation cycles completed
+        # number of simulation cycles completed
+        self.cycles_completed = 0
 
         # MENU BAR
         # Configure the file menu
@@ -474,7 +529,8 @@ class Gui(wx.Frame):
         self.continue_button.SetBackgroundColour(self.windowcolour)
         self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches\n☐=0, ☑=1")
 
-        # Constructs the switch list in a way that doesn't cause problems before stuff is connected
+        # Constructs the switch list in a way that
+        # doesn't cause problems before stuff is connected
         try:
             self.switch_list_ids = self.devices.find_devices(
                 self.devices.SWITCH
@@ -493,12 +549,13 @@ class Gui(wx.Frame):
                 1,
                 2,
                 3,
-            ]  # This should be a list of device objects, but that doesn't really work here
+            ]
             self.switch_list_names = [
                 "Placeholder",
                 "Switch",
                 "Names",
-            ]  # This can go if the file is only run with a definition already in place (maybe switch to something empty later?)
+            ]
+            # This can go if the file is only run with a definition already in place
         self.switch_toggles = wx.CheckListBox(
             self,
             wx.ID_ANY,
@@ -512,7 +569,7 @@ class Gui(wx.Frame):
                     self.switch_toggles.Check(switch)
                 else:
                     pass
-            except AttributeError:  # I guessed the errors and it worked, this might cause issues later
+            except AttributeError:
                 self.switch_toggles.SetCheckedItems([0, 2])
 
         # Repeat the above for monitor trace toggling
@@ -677,11 +734,15 @@ class Gui(wx.Frame):
                 wx.ICON_INFORMATION | wx.OK,
             )
         if Id == wx.ID_OPEN:
-            with wx.FileDialog(self, "Open TXT file", wildcard="TXT files (*.txt)|*.txt",
-                       style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            with wx.FileDialog(
+                self,
+                "Open TXT file",
+                wildcard="TXT files (*.txt)|*.txt",
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            ) as fileDialog:
 
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return     # the user changed their mind
+                    return  # the user changed their mind
 
                 # Proceed loading the file chosen by the user
                 path = fileDialog.GetPath()
@@ -696,7 +757,8 @@ class Gui(wx.Frame):
         if Id == wx.ID_SAVE:
             ask = wx.TextEntryDialog(
                 self,
-                "Please input the filepath you would like to save the image to\nThe default extension is .jpg",
+                """Please input the filepath you would like to save the image to
+                \nThe default extension is .jpg""",
             )
             if ask.ShowModal():
                 image_name = ask.GetValue()
@@ -764,7 +826,9 @@ class Gui(wx.Frame):
             self.input_title.SetForegroundColour(self.textcolour)
             self.canvas_button.SetBackgroundColour(self.windowcolour)
             self.canvas_button.SetForegroundColour(self.textcolour)
-            # self.spin.SetBackgroundColour(self.windowcolour)   # This line doesn't work in Linux for no apparent reason so the spinner stands out a bit
+            # These lines doesn't work in Linux for no apparent reason so
+            # the spinner stands out a bit
+            # self.spin.SetBackgroundColour(self.windowcolour)
             # self.spin.SetForegroundColour(self.textcolour)
             self.run_button.SetBackgroundColour(self.windowcolour)
             self.run_button.SetForegroundColour(self.textcolour)
@@ -787,14 +851,14 @@ class Gui(wx.Frame):
                 self.connection_boxes[connection].SetForegroundColour(self.textcolour)
                 self.connection_boxes[connection].SetBackgroundColour(self.windowcolour)
                 self.connection_boxes[connection].Refresh()
-                # The dropdown gets recoloured but the box itself doesn't, potential FIXME?
                 self.connection_target_titles[connection].SetForegroundColour(
                     self.textcolour
                 )
             # These last two are only used on Linux, the above section only on Windows
             self.switch_toggles.SetForegroundColour(self.textcolour)
             self.monitor_toggles.SetForegroundColour(self.textcolour)
-            # Log box needs to be re-written in Linux as the text keeps the old colour when Dark Mode is toggled
+            # Log box needs to be re-written in Linux as the text
+            # keeps the old colour when Dark Mode is toggled
             log_text = self.log.GetLineText(0)
             for line in range(1, self.log.GetNumberOfLines()):
                 log_text = "\n".join([log_text, self.log.GetLineText(line)])
@@ -850,7 +914,8 @@ class Gui(wx.Frame):
             print("".join(["The signal ", monitor_name, " is no longer monitored"]))
             if self.monitors.remove_monitor(device, port):
                 print("Monitor removed successfully.")
-                # Remove the monitor from the monitored list and add it to the unmonitored list
+                # Remove the monitor from the monitored list
+                # and add it to the unmonitored list
                 self.monitored_list.remove(monitor_name)
                 self.unmonitored_list.append(monitor_name)
                 self.canvas.on_paint(0)
@@ -861,7 +926,8 @@ class Gui(wx.Frame):
             code = self.monitors.make_monitor(device, port, self.cycles_completed)
             if code == self.monitors.NO_ERROR:
                 print("Monitor added successfully.")
-                # Remove the monitor from the unmonitored list and add it to the monitored list
+                # Remove the monitor from the unmonitored list
+                # and add it to the monitored list
                 self.unmonitored_list.remove(monitor_name)
                 self.monitored_list.append(monitor_name)
                 self.canvas.on_paint(0)
@@ -873,7 +939,8 @@ class Gui(wx.Frame):
                 print("Error! This signal is already monitored.")
         else:
             print(
-                "Something has gone wrong: the monitor list doesn't seem to be reading correctly."
+                """Something has gone wrong: the monitor list doesn't seem to
+                be reading correctly."""
             )  # This really shouldn't ever happen
 
     def on_conbox(self, event):
@@ -932,6 +999,7 @@ class Gui(wx.Frame):
 
     # Get signal (& port) ids from their names
     def id_from_name(self, name):
+        """Get the device and port ids from a DEVICE.PORT name string"""
         parts = name.split(".", 1)
         if len(parts) == 1:
             dev_name = parts[0]
@@ -946,7 +1014,8 @@ class Gui(wx.Frame):
     # Text command events
     def on_text_input(self, event):
         """Handle the event when the user enters text."""
-        self.cursor = 0  # lets it read more than just the first input by resetting the cursor each time
+        self.cursor = 0
+        # lets it read more than just the first input by resetting the cursor each time
         self.text_input_value = self.text_input.GetValue()
         print(self.text_input_value)
         # Add integration with userint.py for running commands from the text box
@@ -1215,8 +1284,10 @@ class Gui(wx.Frame):
 
     def connect_command(self, start="Read text", end="Read text"):
         """Create a connection between an output and input"""
-        # For this and disconnect_command, the "Read text" part is from when there was an option to execute this from the
-        # command input, although this has since been removed as it was not very intuitive and could be a trap for
+        # For this and disconnect_command, the "Read text" part is from
+        # when there was an option to execute this from the
+        # command input, although this has since been removed as it was
+        # not very intuitive and could be a trap for
         # inexperienced users
         if start == "Read text":
             start = self.read_signal_name()
@@ -1234,15 +1305,23 @@ class Gui(wx.Frame):
         )
         if error == self.network.NO_ERROR:
             print("Connection successfully made")
-        else:
-            print(self.network.NO_ERROR, error)
+        elif error == self.network.DEVICE_ABSENT:
+            print("ERROR: Device not found")
+        elif error == self.network.INPUT_CONNECTED:
+            print("ERROR: Input already connected to another port")
+        elif error == self.network.INPUT_TO_INPUT:
+            print("ERROR: Inputs can't be connected to other inputs")
+        elif error == self.network.PORT_ABSENT:
+            print("ERROR: Not a valid input or output port")
+        elif error == self.network.OUTPUT_TO_OUTPUT:
+            print("ERROR: Outputs can't be connected to other outputs")
+        elif error == self.network.NO_CONNECTION:
+            print("ERROR: Those ports weren't connected")
         # Check circuit for completeness
         if self.network.check_network():
             print("Network is complete and ready to run.")
         else:
             print("One or more inputs in the network are missing a connection.")
-
-    # TODO More descriptive errors for connect_command and disconnect command??? (at least remove the number-based errors)
 
     def disconnect_command(self, start="Read text", end="Read text"):
         """Cut a connection between an output and input"""
@@ -1262,11 +1341,22 @@ class Gui(wx.Frame):
         )
         if error == self.network.NO_ERROR:
             print("Connection successfully cut")
-        else:
-            print(self.network.NO_ERROR, error)
+        elif error == self.network.DEVICE_ABSENT:
+            print("ERROR: Device not found")
+        elif error == self.network.INPUT_CONNECTED:
+            print("ERROR: Input already connected to another port")
+        elif error == self.network.INPUT_TO_INPUT:
+            print("ERROR: Inputs can't be connected to other inputs")
+        elif error == self.network.PORT_ABSENT:
+            print("ERROR: Not a valid input or output port")
+        elif error == self.network.OUTPUT_TO_OUTPUT:
+            print("ERROR: Outputs can't be connected to other outputs")
+        elif error == self.network.NO_CONNECTION:
+            print("ERROR: Those ports weren't connected")
         if start == "Read text":
             print(
-                "Network is incomplete, please connect something to the disconnected input before running."
+                """Network is incomplete, please connect something to the
+                disconnected input before running."""
             )
 
 
