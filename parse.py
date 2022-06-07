@@ -5,9 +5,7 @@ correctness of the symbols received from the scanner and then builds the
 logic network.
 """
 
-from typing import Tuple
-
-from pyparsing import Optional
+from typing import Tuple, Optional
 
 import errorlog
 from devices import Devices
