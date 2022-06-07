@@ -48,8 +48,7 @@ class Names:
         if not isinstance(num_error_codes, int):
             raise TypeError("Expected num_error_codes to be an integer.")
         self.error_code_count += num_error_codes
-        return range(self.error_code_count - num_error_codes,
-                     self.error_code_count)
+        return range(self.error_code_count - num_error_codes, self.error_code_count)
 
     def query(self, name_string):
         """Return the corresponding name ID for name_string.
@@ -75,7 +74,7 @@ class Names:
             if isinstance(name, str) and not name.isspace():
                 if name not in self.names:
                     self.names.append(name)
-                    ids.append(len(self.names)-1)
+                    ids.append(len(self.names) - 1)
                 else:
                     ids.append(self.names.index(name))
         return ids
@@ -93,4 +92,4 @@ class Names:
                 return None
 
         elif name_id < 0:
-            raise AssertionError('Negative-integers are not allowed!')
+            raise AssertionError("Negative-integers are not allowed!")

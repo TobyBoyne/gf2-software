@@ -10,24 +10,22 @@ Symbol - encapsulates a symbol and stores its properties.
 """
 
 
-from os import PathLike
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from names import Names
 
 
 class Symbol:
-
     """Encapsulate a symbol and store its properties.
 
-    Parameters
+    Attributes
     ----------
-    No parameters.
-
-    Public methods
-    --------------
-    No public methods.
+    type: the type of the symbol, as listed in Scanner.SYMBOL_TYPES_LIST.
+    id: the id of the symbol - either a numerical value (for Scanner.NUMBER), or the
+        id of the Symbol in the Names object.
+    cursor_line: the line number of the Symbol within the input text file.
+    cursor_column: the index of the Symbol within a line.
     """
 
     def __init__(self):
@@ -35,16 +33,20 @@ class Symbol:
         self.type = None
         self.id = None
 
-    def set_cursor_pos(self, line, col):
+        self.cursor_line = None
+        self.cursor_column = None
+
+    def set_cursor_pos(self, line: int, col: int) -> None:
+        """Set the position of the Symbol to the current cursor position."""
         self.cursor_line = line
         self.cursor_column = col
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a representation for the Symbol class."""
         return f"S(type={self.type}, id={self.id})"
 
 
 class Scanner:
-
     """Read circuit definition file and translate the characters into symbols.
 
     Once supplied with the path to a valid definition file, the scanner
@@ -60,15 +62,10 @@ class Scanner:
     path: path to the circuit definition file.
     names: instance of the names.Names() class.
 
-    Class variables
+    Class attributes
     ----------
     SYMBOL_TYPES_LIST: all symbols with associated index
     KEYWORDS_LIST: all keywords in language definition
-
-    Public methods
-    -------------
-    get_symbol(self): Translates the next sequence of characters into a symbol
-                      and returns the symbol.
     """
 
     SYMBOL_TYPES_LIST = [
@@ -87,9 +84,8 @@ class Scanner:
 
     KEYWORDS_LIST = ["DEVICE", "CONNECT", "MONITOR", "INPUTS"]
 
-    def __init__(self, path: Union[str, PathLike], names: "Names"):
+    def __init__(self, path: str, names: "Names"):
         """Open specified file and initialise reserved words and IDs."""
-
         self.names = names
         self.path = path
         self.file = open(path, "r")
@@ -106,22 +102,23 @@ class Scanner:
         self.cursor_line = 1
         self.cursor_column = 1
 
-    def advance(self):
+    def _advance(self) -> None:
+        """Get the next character in the file, and increment the cursor position."""
         self.cursor_column += 1
         self.cur = self.file.read(1)
         if self.cur == "\n":
             self.cursor_column = 0
             self.cursor_line += 1
 
-    def get_symbol(self):
+    def get_symbol(self) -> Symbol:
         """Translate the next sequence of characters into a symbol."""
         symbol = Symbol()
-        self.get_next_non_whitespace()
+        self._get_next_non_whitespace()
         symbol.set_cursor_pos(self.cursor_line, self.cursor_column)
 
         # name
         if self.cur.isalpha():
-            name_string = self.get_name()
+            name_string = self._get_name()
             if name_string in Scanner.KEYWORDS_LIST:
                 symbol.type = Scanner.KEYWORD
             else:
@@ -130,13 +127,13 @@ class Scanner:
 
         # number
         elif self.cur.isdigit():
-            symbol.id = self.get_number()
+            symbol.id = self._get_number()
             symbol.type = Scanner.NUMBER
 
         # punctuation
         elif self.cur == "-":
             # must be a part of character pair "->"
-            self.advance()
+            self._advance()
             if self.cur == ">":
                 symbol.type = Scanner.ARROW
             else:
@@ -176,29 +173,27 @@ class Scanner:
             Scanner.SLASH,
             Scanner.DOT,
         ):
-            self.advance()
+            self._advance()
 
         return symbol
 
-    def get_next_non_whitespace(self) -> None:
-        """Returns the next non-whitespace character in the file"""
+    def _get_next_non_whitespace(self) -> None:
+        """Return the next non-whitespace character in the file."""
         while self.cur is None or self.cur.isspace():
-            self.advance()
+            self._advance()
 
-    def get_name(self) -> str:
-        """Starting at a letter, return a name given by a sequence of
-        alphanumeric characters"""
+    def _get_name(self) -> str:
+        """Convert a sequence of alphanumeric characters to a string."""
         name_string = ""
         while self.cur.isalnum():
             name_string += self.cur
-            self.advance()
+            self._advance()
         return name_string
 
-    def get_number(self) -> int:
-        """Starting at a digit, return a number given by a sequence of
-        numeric characters"""
+    def _get_number(self) -> int:
+        """Convert a sequence of numeric characters to a number."""
         num_string = ""
         while self.cur.isdigit():
             num_string += self.cur
-            self.advance()
+            self._advance()
         return int(num_string)

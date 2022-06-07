@@ -113,9 +113,7 @@ class Monitors:
         """
         for device_id, output_id in self.monitors_dictionary:
             signal_level = self.get_monitor_signal(device_id, output_id)
-            self.monitors_dictionary[(device_id, output_id)].append(
-                signal_level
-            )
+            self.monitors_dictionary[(device_id, output_id)].append(signal_level)
 
     def get_signal_names(self):
         """Return two signal name lists: monitored and not monitored."""
@@ -129,9 +127,7 @@ class Monitors:
             device = self.devices.get_device(device_id)
             for output_id in device.outputs:
                 if (device_id, output_id) not in self.monitors_dictionary:
-                    signal_name = self.devices.get_signal_name(
-                        device_id, output_id
-                    )
+                    signal_name = self.devices.get_signal_name(device_id, output_id)
                     non_monitored_signal_list.append(signal_name)
 
         return [monitored_signal_list, non_monitored_signal_list]

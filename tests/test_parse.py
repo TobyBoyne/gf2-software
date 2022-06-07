@@ -127,7 +127,9 @@ def test_parse_network_raises_punctuation_error(parser):
     assert parser.errorlog.contains_error(errorlog.PunctuationError)
 
 
-@pytest.mark.parametrize("parser", ["SW1: SWITCH 2", "CLK1: CLOCK N", "CLK2: CLOCK "], indirect=True)
+@pytest.mark.parametrize(
+    "parser", ["SW1: SWITCH 2", "CLK1: CLOCK N", "CLK2: CLOCK "], indirect=True
+)
 def test_parse_device_raises_device_definition_error(parser):
     """Test if the parser correctly raises a DeviceDefinitionError.
     Occurs when a switch or clock is not followed by an appropriate number."""
@@ -136,7 +138,9 @@ def test_parse_device_raises_device_definition_error(parser):
     assert parser.errorlog.contains_error(errorlog.DeviceDefinitionError)
 
 
-@pytest.mark.parametrize("parser", ["SW1: SWITCH 1", "CLK1: CLOCK 10", "CLK2: CLOCK 1"], indirect=True)
+@pytest.mark.parametrize(
+    "parser", ["SW1: SWITCH 1", "CLK1: CLOCK 10", "CLK2: CLOCK 1"], indirect=True
+)
 def test_parse_devicelist_raises_missing_keyword_error(parser):
     """Test if the parser correctly raises a MissingKeywordError.
     Occurs when the DEVICE Keyword does not precede the device list."""
