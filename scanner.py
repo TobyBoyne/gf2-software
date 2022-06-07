@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 
 class Symbol:
     """Encapsulate a symbol and store its properties.
-
-    Parameters
+    
+    Attributes
     ----------
-    No parameters.
-
-    Public methods
-    --------------
-    No public methods.
+    type: the type of the symbol, as listed in Scanner.SYMBOL_TYPES_LIST.
+    id: the id of the symbol - either a numerical value (for Scanner.NUMBER), or the 
+        id of the Symbol in the Names object.
+    cursor_line: the line number of the Symbol within the input text file.
+    cursor_column: the index of the Symbol within a line.
     """
 
     def __init__(self):
@@ -37,7 +37,7 @@ class Symbol:
         self.cursor_column = None
 
     def set_cursor_pos(self, line: int, col: int) -> None:
-        """Set the position of the symbol to the current cursor position."""
+        """Set the position of the Symbol to the current cursor position."""
         self.cursor_line = line
         self.cursor_column = col
 
@@ -62,7 +62,7 @@ class Scanner:
     path: path to the circuit definition file.
     names: instance of the names.Names() class.
 
-    Class variables
+    Class attributes
     ----------
     SYMBOL_TYPES_LIST: all symbols with associated index
     KEYWORDS_LIST: all keywords in language definition
