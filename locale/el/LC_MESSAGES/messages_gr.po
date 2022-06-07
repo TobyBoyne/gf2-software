@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-06-07 10:56+0100\n"
-"PO-Revision-Date: 2022-06-07 13:56+0100\n"
+"PO-Revision-Date: 2022-06-07 18:20+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: el\n"
@@ -17,9 +17,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.0.1\n"
 
+#: gui.py:162
+msgid "Monitor traces will appear after the circuit is run"
+msgstr "Τα ίχνη παρακολούθησης θα εμφανιστούν μετά την εκτέλεση του κυκλώματος"
+
 #: gui.py:496
 msgid "&?   About"
-msgstr "&?   About"
+msgstr "&?   Σχετικά με"
 
 #: gui.py:497
 msgid "&📁 Open File\tCtrl+O"
@@ -51,7 +55,7 @@ msgstr "&! Εντολές\tCtrl+Shift+C"
 
 #: gui.py:507
 msgid "&Help"
-msgstr "& Βοήθεια"
+msgstr "&Βοήθεια"
 
 #: gui.py:511
 msgid "&◑ Toggle Dark Mode\tCtrl+T"
@@ -67,7 +71,7 @@ msgstr "&Ρυθμίσεις"
 
 #: gui.py:528
 msgid "Command Input"
-msgstr "Command Input"
+msgstr "Είσοδος εντολών"
 
 #: gui.py:533
 msgid "Reset Canvas"
@@ -90,7 +94,7 @@ msgid ""
 "Toggle Switches\n"
 "☐=0, ☑=1"
 msgstr ""
-"Εναλλαγή Διακοπτών\n"
+"Εναλλαγή Διακόπτων\n"
 "☐=0, ☑=1"
 
 #: gui.py:560
@@ -121,6 +125,10 @@ msgstr "Παρακολούθησε τους διακόπτες"
 msgid "Connections"
 msgstr "Συνδέσεις"
 
+#: gui.py:742
+msgid "About Logsim"
+msgstr "Σχετικά με το Logsim"
+
 #: gui.py:745
 msgid ""
 "Logic Simulator\n"
@@ -129,11 +137,15 @@ msgid ""
 "Group 19 - im475 --- tjad2  --- tjb94\n"
 "2022"
 msgstr ""
-"Logic Simulator\n"
+"Προσομοίωση Logic\n"
 "Δημιουργήθηκε από τον Mojisola Agboola\n"
 "2017\n"
-"Group 19 - im475 --- tjad2  --- tjb94\n"
+"Ομάδα 19 - im475 --- tjad2  --- tjb94\n"
 "2022"
+
+#: gui.py:748
+msgid "Open TXT file"
+msgstr "Άνοιξε ένα αρχείο ΤΧΤ"
 
 #: gui.py:774
 msgid ""
@@ -145,6 +157,18 @@ msgstr ""
 "                \n"
 "Η προεπιλεγμένη επέκταση είναι .jpg"
 
+#: gui.py:774
+msgid "Save Figure"
+msgstr "Αποθήκευσε την εικόνα"
+
+#: gui.py:783
+msgid ""
+"\n\n---------------------\n"
+"Print this in GUI log?"
+msgstr ""
+"\n\n---------------------\n"
+"Τύπωσέ το στο GUI log?"
+
 #: gui.py:785
 msgid "Description File"
 msgstr "Αρχείο Περιγραφής"
@@ -152,22 +176,30 @@ msgstr "Αρχείο Περιγραφής"
 #: gui.py:794
 msgid ""
 "User commands:\n"
-"r N       - run the simulation for N cycles\n"
-"c N       - continue the simulation for N cycles\n"
-"s X N     - set switch X to N (0 or 1)\n"
-"m X       - set a monitor on signal X\n"
-"z X       - zap the monitor on signal X\n"
-"h         - help (this command)\n"
-"q         - quit the program"
+"\nr N       - run the simulation for N cycles"
+"\nc N       - continue the simulation for N cycles"
+"\ns X N     - set switch X to N (0 or 1)"
+"\nm X       - set a monitor on signal X"
+"\nz X       - zap the monitor on signal X"
+"\nh         - help (this command)"
+"\nq         - quit the program"
 msgstr ""
 "Εντολές χρήστη:\n"
-"r N        - εκτελέστε την προσομοίωση για N κύκλους\n"
-"c N        - συνεχίστε την προσομοίωση για N κύκλους\n"
-"s X N        - ρυθμίστε το διακόπτη X στο N (0 ή 1)\n"
-"m X        - ρυθμίστε μια οθόνη στο σήμα X\n"
-"z X        - ακουμπήστε την οθόνη στο σήμα X\n"
-"h       - help (αυτή η εντολή)\n"
-"q        - τερματίστε το πρόγραμμα"
+"\nr N        - εκτελέστε την προσομοίωση για N κύκλους"
+"\nc N        - συνεχίστε την προσομοίωση για N κύκλους"
+"\ns X N      - ρυθμίστε το διακόπτη X σε N (0 ή 1)"
+"\nm X        - προσθέστε μια παρακολούθηση στο σήμα X"
+"\nz X        - αφαιρέστε την παρακολούθηση στο σήμα X"
+"\nh          - help (η παρών εντολή)"
+"\nq          - τερμάτισε το πρόγραμμα"
+
+#: gui.py:802 gui.py:1156
+msgid "User commands:"
+msgstr "Εντολές χρήστη:"
+
+#: gui.py:797
+msgid "Command Help"
+msgstr "Βοήθεια Εντολών"
 
 #: gui.py:811 gui.py:1389
 msgid "Change Monitor Trace Settings"
@@ -187,11 +219,11 @@ msgstr "Το κουμπί Συνέχισε πατήθηκε."
 
 #: gui.py:909
 msgid " has been changed from "
-msgstr "έχει αλλάξει από "
+msgstr " έχει αλλάξει από "
 
 #: gui.py:911
 msgid " to "
-msgstr "σε "
+msgstr " σε "
 
 #: gui.py:917 gui.py:1177
 msgid "Successfully set switch."
@@ -199,7 +231,7 @@ msgstr "Ο διακόπτης ρυθμίστηκε με επιτυχία."
 
 #: gui.py:919 gui.py:1183
 msgid "Error! Invalid switch."
-msgstr "Σφάλμα! Λανθασμένος διακόπτης "
+msgstr "Σφάλμα! Λανθασμένος διακόπτης."
 
 #: gui.py:928 gui.py:939
 msgid "The signal "
@@ -207,11 +239,11 @@ msgstr "Το σήμα "
 
 #: gui.py:928
 msgid " is no longer monitored"
-msgstr "δεν παρακολουθείται πλέον "
+msgstr " δεν παρακολουθείται πλέον"
 
 #: gui.py:930
 msgid "Monitor removed successfully."
-msgstr "Η παρακολούθηση αφαιρέθηκε με επιτυχία "
+msgstr "Η παρακολούθηση αφαιρέθηκε με επιτυχία."
 
 #: gui.py:937
 msgid "Error! Invalid monitor."
@@ -219,15 +251,15 @@ msgstr "Σφάλμα! Λανθασμένη παρακολούθηση."
 
 #: gui.py:939
 msgid " is now being monitored"
-msgstr "παρακολουθείται"
+msgstr " παρακολουθείται"
 
 #: gui.py:942
 msgid "Monitor added successfully."
-msgstr "Η παρακολούθηση προστέθηκε με επιτυχία "
+msgstr "Η παρακολούθηση προστέθηκε με επιτυχία."
 
 #: gui.py:949
 msgid "Error! Invalid monitor output."
-msgstr "Σφάλμα! Λανθασμένη έξοδος οθόνης "
+msgstr "Σφάλμα! Λανθασμένη έξοδος οθόνης."
 
 #: gui.py:951
 msgid "Error! Can't find the device to monitor."
@@ -242,16 +274,16 @@ msgid ""
 "Something has gone wrong: the monitor list doesn't seem to\n"
 "                be reading correctly."
 msgstr ""
-"Κάτι πήγε στραβά: η λίστα παρακολούθησης δεν φαίνεται\n"
+"Κάτι πήγε στραβά: Η λίστα παρακολούθησης δεν φαίνεται\n"
 "                να διαβάζει σωστά."
 
 #: gui.py:995
 msgid " now connected to "
-msgstr " ενώθηκε με"
+msgstr " ενώθηκε με την συσκευή "
 
 #: gui.py:997
 msgid ", not "
-msgstr ", δεν "
+msgstr ", και διακόπηκε με την "
 
 #: gui.py:1003
 msgid "One or more inputs in the network are missing a connection"
@@ -281,33 +313,29 @@ msgstr "Σφάλμα! Αναμενόταν ένας αριθμός."
 msgid "Number out of range."
 msgstr "Ο αριθμός είναι εκτός ορίων."
 
-#: gui.py:1157
-msgid "User commands:"
-msgstr "Εντολές χρήστη:"
-
 #: gui.py:1158
 msgid "r N       - run the simulation for N cycles"
-msgstr "r N        - εκτελέστε την προσομοίωση για N κύκλους"
+msgstr "r N      - εκτελέστε την προσομοίωση για N κύκλους"
 
 #: gui.py:1159
 msgid "c N       - continue the simulation for N cycles"
-msgstr "c N        - συνεχίστε την προσομοίωση για N κύκλους"
+msgstr "c N      - συνεχίστε την προσομοίωση για N κύκλους"
 
 #: gui.py:1160
 msgid "s X N     - set switch X to N (0 or 1)"
-msgstr "s X N        - ρυθμίστε το διακόπτη X στο N (0 ή 1)"
+msgstr "s X N    - ρυθμίστε το διακόπτη X στο N (0 ή 1)"
 
 #: gui.py:1161
 msgid "m X       - set a monitor on signal X"
-msgstr "m X        - ρυθμίστε μια οθόνη στο σήμα X"
+msgstr "m X      - ρυθμίστε μια οθόνη στο σήμα X"
 
 #: gui.py:1162
 msgid "z X       - zap the monitor on signal X"
-msgstr "z X        - ακουμπήστε την οθόνη στο σήμα X"
+msgstr "z X      - αφαιρέστε την παρακολούθηση απο το σήμα X"
 
 #: gui.py:1165
 msgid "h         - help (this command)"
-msgstr "h       - help (αυτή η εντολή)"
+msgstr "h        - help (αυτή η εντολή)"
 
 #: gui.py:1166
 msgid "q         - quit the program"
@@ -327,11 +355,11 @@ msgstr "Η παρακολούθηση αφαιρέθηκε με επιτυχία
 
 #: gui.py:1241
 msgid "Error! Could not zap monitor."
-msgstr "Σφάλμα! Η οθόνη δεν αφαιρέθηκε."
+msgstr "Σφάλμα! Η παρακολούθηση δεν αφαιρέθηκε."
 
 #: gui.py:1252
 msgid "Error! Network oscillating."
-msgstr "Σφάλμα! Το δίκτυο πάλλεται."
+msgstr "Σφάλμα! Το δίκτυο δεν είναι σταθερό."
 
 #: gui.py:1263 gui.py:1279
 msgid "Invalid number of cycles (must be integer). Enter 'h' for help."
@@ -343,11 +371,11 @@ msgstr "Τρέχει για "
 
 #: gui.py:1267
 msgid " cycles"
-msgstr "κύκλους"
+msgstr " κύκλους"
 
 #: gui.py:1283
 msgid "Error! Nothing to continue. Run first."
-msgstr "Σφάλμα! Πρώτα Τρέξε το πρόγραμμα."
+msgstr "Σφάλμα! Πρώτα Τρέξε το πρόγραμμα πριν συνεχίσετε."
 
 #: gui.py:1289
 msgid "Continuing for"
@@ -355,7 +383,7 @@ msgstr "Συνεχίζει για"
 
 #: gui.py:1291
 msgid "cycles."
-msgstr "κύκλους"
+msgstr "κύκλους."
 
 #: gui.py:1292
 msgid "Total:"

@@ -12,7 +12,6 @@ Gui - configures the main window and all the widgets.
 MonitorSetDialog - special dialog box that is used to change monitor trace settings.
 """
 import sys
-import os
 import numpy as np
 import wx
 import wx.glcanvas as wxcanvas
@@ -21,16 +20,9 @@ import wx.lib.scrolledpanel
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
-import gettext
-
 import builtins
-from wx.lib.mixins.inspection import InspectionMixin
 
-#_ = gettext.gettext # marker on strings to translate
 builtins.__dict__["_"] = wx.GetTranslation
-#_ = wx.GetTranslation
-
-languages = [wx.LANGUAGE_ENGLISH, wx.LANGUAGE_GREEK]
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -158,7 +150,7 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         if self.monitorsshow:
             self.render_monitors(30, 30)
         else:
-            self.render("Monitor traces will appear after the circuit is run")
+            self.render(_("Monitor traces will appear after the circuit is run"))
 
     def on_size(self, event):
         """Handle the canvas resize event."""
@@ -742,15 +734,15 @@ class Gui(wx.Frame):
         if Id == wx.ID_ABOUT:
             wx.MessageBox(
                 _("Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
-                "Group 19 - im475 --- tjad2  --- tjb94\n2022",
-                "About Logsim"),
+                "Group 19 - im475 --- tjad2  --- tjb94\n2022"),
+                _("About Logsim"),
                 wx.ICON_INFORMATION | wx.OK,
             )
         if Id == wx.ID_OPEN:
             with wx.FileDialog(
                 self,
-                "Open TXT file",
-                wildcard="TXT files (*.txt)|*.txt",
+                _("Open TXT file"),
+                wildcard=_("TXT files (*.txt)|*.txt"),
                 style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
             ) as fileDialog:
 
@@ -771,7 +763,7 @@ class Gui(wx.Frame):
             ask = wx.TextEntryDialog(
                 self,
                 _("""Please input the filepath you would like to save the image to
-                \nThe default extension is .jpg"""),
+                \nThe default extension is .jpg"""), _("Save Figure")
             )
             if ask.ShowModal():
                 image_name = ask.GetValue()
@@ -780,7 +772,7 @@ class Gui(wx.Frame):
             file = open(self.path, "r")
             filetxt = file.read()
             resp = wx.MessageBox(
-                "".join([filetxt, "\n\n---------------------\nPrint this in GUI log?"]),
+                "".join([filetxt, _("\n\n---------------------\nPrint this in GUI log?")]),
                 _("Description File"),
                 wx.ICON_INFORMATION | wx.YES | wx.NO,
             )
@@ -790,16 +782,15 @@ class Gui(wx.Frame):
         # Help Tab
         if Id == wx.ID_HELP_COMMANDS:
             wx.MessageBox(
-                _("User commands:"
-                "\nr N       - run the simulation for N cycles"
+                _("User commands:\n"
+                  "\nr N       - run the simulation for N cycles"
                 "\nc N       - continue the simulation for N cycles"
                 "\ns X N     - set switch X to N (0 or 1)"
                 "\nm X       - set a monitor on signal X"
                 "\nz X       - zap the monitor on signal X"
-                # "\nl X Y     - connect output X to input Y"
-                # "\nx X Y     - discconnect output X from input Y"
-                "\nh         - help (this command)" "\nq         - quit the program",
-                "Command Help"),
+                "\nh         - help (this command)"
+                "\nq         - quit the program"),
+                _("Command Help"),
                 wx.ICON_INFORMATION | wx.OK,
             )
 
@@ -1443,31 +1434,3 @@ class MonitorSetDialog(wx.Dialog):
     def OnClose(self, e):
 
         self.Destroy()
-
-
-class LanguageToggle(wx.App, InspectionMixin):
-
-    def OnInit(self):
-
-        self.Init()
-
-        language = wx.Locale.GetSystemLanguage()
-
-        if language in languages:
-            wx_lang = language
-        else:
-            wx_lang = wx.LANGUAGE_ENGLISH
-        wx_lang = 94
-        #create locale
-        self.locale = wx.Locale(wx_lang)
-        if self.locale.IsOk():
-            basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
-            #sys.path.append(base_path)
-            localedir = os.path.join(basepath, "locale")
-            domain = "messages_gr"
-            self.locale.AddCatalogLookupPathPrefix(localedir)
-            self.locale.AddCatalog(domain)
-        else:
-            self.locale = None
-
-        return True

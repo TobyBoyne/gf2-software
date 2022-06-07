@@ -12,11 +12,9 @@ Graphical user interface: logsim.py <file path>
 """
 import getopt
 import sys
-
-import wx
-
 from devices import Devices
 from gui import Gui
+from mylanguageapp import MyLanguageApp
 from monitors import Monitors
 from names import Names
 from network import Network
@@ -78,7 +76,7 @@ def main(arg_list):
         parser = Parser(names, devices, network, monitors, scanner)
         if parser.parse_network():
             # Initialise an instance of the gui.Gui() class
-            app = wx.App()
+            app = MyLanguageApp(redirect=False)
             gui = Gui("Logic Simulator", path, names, devices, network, monitors)
             gui.Show(True)
             app.MainLoop()
