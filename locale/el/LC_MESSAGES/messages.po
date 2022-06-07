@@ -1,0 +1,61 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-06-06 22:52+0100\n"
+"PO-Revision-Date: 2022-06-07 09:33+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: translation.py:40
+#, python-brace-format
+msgid "Bank account '{id}' was created with initial Balance: {balance}"
+msgstr ""
+"Ο τραπεζικός λογαριασμός \"{id}\" δημιουργήθηκε με αρχικό Υπόλοιπο: {balance}"
+
+#: translation.py:41
+msgid "&?   About"
+msgstr "&?   Σχετικά με το"
+
+#: translation.py:42
+msgid "&📁 Open File\tCtrl+O"
+msgstr "&📁 Άνοιγμα αρχείου\tCtrl+O"
+
+#: translation.py:46
+#, python-brace-format
+msgid "Deposited {amount} to current balance"
+msgstr "Κατατέθηκε {amount} στο τρέχον υπόλοιπο"
+
+#: translation.py:50
+#, python-brace-format
+msgid "Withdrawned {amount} from current balance"
+msgstr "Αποσύρθηκε {amount} από το τρέχον υπόλοιπο"
+
+#: translation.py:56
+#, python-brace-format
+msgid "Balance for Account '{id}' is: {balance}"
+msgstr "Το υπόλοιπο του λογαριασμού \"{id}\" είναι: {balance}"
+
+#: translation.py:77
+msgid "One of the Account numbers does not exist"
+msgstr "Ένας από τους αριθμούς λογαριασμού δεν υπάρχει"
+
+#: translation.py:83
+#, python-brace-format
+msgid ""
+"Successfully transfered {amount} from Account '{from_acccount_id}' to "
+"Account: {to_account_id}"
+msgstr ""
+"Μεταφέρθηκε επιτυχώς {amount} από το λογαριασμό '{from_acccount_id}' "
+"στο λογαριασμό: {to_account_id}"

@@ -12,7 +12,7 @@ Gui - configures the main window and all the widgets.
 MonitorSetDialog - special dialog box that is used to change monitor trace settings.
 """
 import sys
-
+import os
 import numpy as np
 import wx
 import wx.glcanvas as wxcanvas
@@ -21,7 +21,16 @@ import wx.lib.scrolledpanel
 from matplotlib import colors
 from OpenGL import GL, GLUT
 from PIL import Image
+import gettext
 
+import builtins
+from wx.lib.mixins.inspection import InspectionMixin
+
+#_ = gettext.gettext # marker on strings to translate
+builtins.__dict__["_"] = wx.GetTranslation
+#_ = wx.GetTranslation
+
+languages = [wx.LANGUAGE_ENGLISH, wx.LANGUAGE_GREEK]
 
 class MyGLCanvas(wxcanvas.GLCanvas):
     """Handle all drawing operations.
@@ -368,6 +377,10 @@ class MyGLCanvas(wxcanvas.GLCanvas):
         self.on_paint(0)  # Repaint the canvas
 
 
+class MonitorSetDialog:
+    pass
+
+
 class Gui(wx.Frame):
     """Configure the main window and all the widgets.
 
@@ -479,24 +492,24 @@ class Gui(wx.Frame):
         # Configure the file menu
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()
-        fileMenu.Append(wx.ID_ABOUT, "&?   About")
-        fileMenu.Append(wx.ID_OPEN, "&📁 Open File\tCtrl+O")
-        fileMenu.Append(wx.ID_REFRESH, "&🔃 Reload File\tCtrl+R")
-        fileMenu.Append(wx.ID_FILE, "&…  Show Description\tCtrl+D")
-        fileMenu.Append(wx.ID_SAVE, "&💾 Save Monitor Graphs\tCtrl+S")
-        fileMenu.Append(wx.ID_EXIT, "&❌ Exit\tCtrl+Q")
-        menuBar.Append(fileMenu, "&File")
+        fileMenu.Append(wx.ID_ABOUT, _("&?   About"))
+        fileMenu.Append(wx.ID_OPEN, _("&📁 Open File\tCtrl+O"))
+        fileMenu.Append(wx.ID_REFRESH, _("&🔃 Reload File\tCtrl+R"))
+        fileMenu.Append(wx.ID_FILE, _("&…  Show Description\tCtrl+D"))
+        fileMenu.Append(wx.ID_SAVE, _("&💾 Save Monitor Graphs\tCtrl+S"))
+        fileMenu.Append(wx.ID_EXIT, _("&❌ Exit\tCtrl+Q"))
+        menuBar.Append(fileMenu, _("&File"))
 
         # Help Menu
         helpMenu = wx.Menu()
-        helpMenu.Append(wx.ID_HELP_COMMANDS, "&! Commands\tCtrl+Shift+C")
-        menuBar.Append(helpMenu, "&Help")
+        helpMenu.Append(wx.ID_HELP_COMMANDS, _("&! Commands\tCtrl+Shift+C"))
+        menuBar.Append(helpMenu, _("&Help"))
 
         # Settings Menu
         settingsMenu = wx.Menu()
-        settingsMenu.Append(wx.ID_SELECT_COLOR, "&◑ Toggle Dark Mode\tCtrl+T")
-        settingsMenu.Append(wx.ID_SELECT_FONT, "&⎍  Modify Monitor Trace Settings")
-        menuBar.Append(settingsMenu, "&Settings")
+        settingsMenu.Append(wx.ID_SELECT_COLOR, _("&◑ Toggle Dark Mode\tCtrl+T"))
+        settingsMenu.Append(wx.ID_SELECT_FONT, _("&⎍  Modify Monitor Trace Settings"))
+        menuBar.Append(settingsMenu, _("&Settings"))
 
         # Opening a new file
         self.new_path = None
@@ -511,23 +524,23 @@ class Gui(wx.Frame):
         self.log = wx.TextCtrl(self, wx.ID_ANY, size=(320, 300), style=self.logstyle)
         self.log.SetBackgroundColour(self.windowcolour)
         sys.stdout = self.log
-        self.input_title = wx.StaticText(self, wx.ID_ANY, "Command Input")
+        self.input_title = wx.StaticText(self, wx.ID_ANY, _("Command Input"))
         self.text_input = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_MULTILINE
         )
         self.text_input.SetBackgroundColour(self.windowcolour)
-        self.canvas_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Reset Canvas")
+        self.canvas_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, _("Reset Canvas"))
         self.canvas_button.SetBackgroundColour(self.windowcolour)
 
         # Configure the widgets
-        self.text = wx.StaticText(self, wx.ID_ANY, "Cycles")
+        self.text = wx.StaticText(self, wx.ID_ANY, _("Cycles"))
         self.spin = wx.SpinCtrl(self, wx.ID_ANY, "10", min=1)
         self.spin.SetBackgroundColour(self.windowcolour)
-        self.run_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Run")
+        self.run_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, _("Run"))
         self.run_button.SetBackgroundColour(self.windowcolour)
-        self.continue_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, "Continue")
+        self.continue_button = wx.lib.buttons.GenButton(self, wx.ID_ANY, _("Continue"))
         self.continue_button.SetBackgroundColour(self.windowcolour)
-        self.switch_title = wx.StaticText(self, wx.ID_ANY, "Toggle Switches\n☐=0, ☑=1")
+        self.switch_title = wx.StaticText(self, wx.ID_ANY, _("Toggle Switches\n☐=0, ☑=1"))
 
         # Constructs the switch list in a way that
         # doesn't cause problems before stuff is connected
@@ -543,7 +556,7 @@ class Gui(wx.Frame):
                 switch = self.devices.get_device(switch_id)
                 self.switch_list.append(switch)
         except AttributeError:
-            print("An error occured while loading the switches")
+            print(_("An error occured while loading the switches"))
             self.switch_list_ids = [1, 2, 3]
             self.switch_list = [
                 1,
@@ -560,7 +573,7 @@ class Gui(wx.Frame):
             self,
             wx.ID_ANY,
             choices=self.switch_list_names,
-            name="Toggle Switches",
+            name=_("Toggle Switches"),
             style=wx.HSCROLL,
         )
         for switch in range(len(self.switch_list_names)):
@@ -574,7 +587,7 @@ class Gui(wx.Frame):
 
         # Repeat the above for monitor trace toggling
         self.monitor_title = wx.StaticText(
-            self, wx.ID_ANY, "Toggle Monitors\n☐=off, ☑=on"
+            self, wx.ID_ANY, _("Toggle Monitors\n☐=off, ☑=on")
         )
         try:
             (
@@ -584,7 +597,7 @@ class Gui(wx.Frame):
                 self.monitors.get_signal_names()
             )  # Gets the monitored and unmonitored signals
         except AttributeError:
-            print("An error occured while loading the monitors")
+            print(_("An error occured while loading the monitors"))
             self.monitored_list = ["Placeholder_On"]
             self.unmonitored_list = ["Off1", "Off2", "Off4"]
         self.all_monitors = self.monitored_list + self.unmonitored_list
@@ -592,14 +605,14 @@ class Gui(wx.Frame):
             self,
             wx.ID_ANY,
             choices=self.all_monitors,
-            name="Monitor Toggles",
+            name=_("Monitor Toggles"),
             style=wx.HSCROLL,
         )
         if len(self.monitored_list) == 1:
             self.monitor_toggles.Check(0)
         elif len(self.monitored_list) > 1:
             self.monitor_toggles.SetCheckedItems(range(len(self.monitored_list)))
-        self.connect_title = wx.StaticText(self, wx.ID_ANY, "Connections")
+        self.connect_title = wx.StaticText(self, wx.ID_ANY, _("Connections"))
 
         # Connection list (also on sidebar, but a bit weird)
         self.output_names = []
@@ -611,7 +624,7 @@ class Gui(wx.Frame):
                 output_name = self.devices.get_signal_name(device_id, output_id)
                 self.output_names.append(output_name)
 
-        self.connect_window = wx.ScrolledWindow(self, id=wx.ID_ANY, name="Connections")
+        self.connect_window = wx.ScrolledWindow(self, id=wx.ID_ANY, name=_("Connections"))
         self.connect_window.SetBackgroundColour(self.windowcolour)
         self.connect_sizer = wx.BoxSizer(wx.VERTICAL)
         self.connection_row_sizer = []
@@ -728,9 +741,9 @@ class Gui(wx.Frame):
             self.Close(True)
         if Id == wx.ID_ABOUT:
             wx.MessageBox(
-                "Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
+                _("Logic Simulator\nCreated by Mojisola Agboola\n2017\n"
                 "Group 19 - im475 --- tjad2  --- tjb94\n2022",
-                "About Logsim",
+                "About Logsim"),
                 wx.ICON_INFORMATION | wx.OK,
             )
         if Id == wx.ID_OPEN:
@@ -757,8 +770,8 @@ class Gui(wx.Frame):
         if Id == wx.ID_SAVE:
             ask = wx.TextEntryDialog(
                 self,
-                """Please input the filepath you would like to save the image to
-                \nThe default extension is .jpg""",
+                _("""Please input the filepath you would like to save the image to
+                \nThe default extension is .jpg"""),
             )
             if ask.ShowModal():
                 image_name = ask.GetValue()
@@ -768,7 +781,7 @@ class Gui(wx.Frame):
             filetxt = file.read()
             resp = wx.MessageBox(
                 "".join([filetxt, "\n\n---------------------\nPrint this in GUI log?"]),
-                "Description File",
+                _("Description File"),
                 wx.ICON_INFORMATION | wx.YES | wx.NO,
             )
             if resp == wx.YES:
@@ -777,7 +790,7 @@ class Gui(wx.Frame):
         # Help Tab
         if Id == wx.ID_HELP_COMMANDS:
             wx.MessageBox(
-                "User commands:"
+                _("User commands:"
                 "\nr N       - run the simulation for N cycles"
                 "\nc N       - continue the simulation for N cycles"
                 "\ns X N     - set switch X to N (0 or 1)"
@@ -786,7 +799,7 @@ class Gui(wx.Frame):
                 # "\nl X Y     - connect output X to input Y"
                 # "\nx X Y     - discconnect output X from input Y"
                 "\nh         - help (this command)" "\nq         - quit the program",
-                "Command Help",
+                "Command Help"),
                 wx.ICON_INFORMATION | wx.OK,
             )
 
@@ -794,7 +807,7 @@ class Gui(wx.Frame):
         if Id == wx.ID_SELECT_FONT:
             # Change Monitor Trace Settings
             mtDialog = MonitorSetDialog(
-                self, self, id=wx.ID_ANY, title="Change Monitor Trace Settings"
+                self, self, id=wx.ID_ANY, title=_("Change Monitor Trace Settings")
             )
             mtDialog.ShowModal()
         if Id == wx.ID_SELECT_COLOR:
@@ -868,16 +881,16 @@ class Gui(wx.Frame):
     def on_spin(self, event):
         """Handle the event when the user changes the spin control value."""
         spin_value = self.spin.GetValue()
-        print("".join(["New spin control value: ", str(spin_value)]))
+        print("".join([_("New spin control value: "), str(spin_value)]))
 
     def on_run_button(self, event):
         """Handle the event when the user clicks the run button."""
-        print("Run button pressed.")
+        print(_("Run button pressed."))
         self.run_command(self.spin.GetValue())
 
     def on_continue_button(self, event):
         """Handle the event when the user clicks the continue button."""
-        print("Continue button pressed.")
+        print(_("Continue button pressed."))
         self.continue_command(self.spin.GetValue())
 
     def on_switch_check(self, event):
@@ -892,17 +905,17 @@ class Gui(wx.Frame):
             "".join(
                 [
                     str(switch_name),
-                    " has been changed from ",
+                    _(" has been changed from "),
                     str(switch_before),
-                    " to ",
+                    _(" to "),
                     str(switch_after),
                 ]
             )
         )
         if self.devices.set_switch(switch_id, switch_after):
-            print("Successfully set switch.")
+            print(_("Successfully set switch."))
         else:
-            print("Error! Invalid switch.")
+            print(_("Error! Invalid switch."))
 
     def on_monitor_check(self, event):
         """Handle the event when the user clicks on one of the monitor checkboxes"""
@@ -911,36 +924,36 @@ class Gui(wx.Frame):
         # Check if monitor was active or inactive before
         [device, port] = self.id_from_name(monitor_name)
         if monitor_name in self.monitored_list:
-            print("".join(["The signal ", monitor_name, " is no longer monitored"]))
+            print("".join([_("The signal "), monitor_name, _(" is no longer monitored")]))
             if self.monitors.remove_monitor(device, port):
-                print("Monitor removed successfully.")
+                print(_("Monitor removed successfully."))
                 # Remove the monitor from the monitored list
                 # and add it to the unmonitored list
                 self.monitored_list.remove(monitor_name)
                 self.unmonitored_list.append(monitor_name)
                 self.canvas.on_paint(0)
             else:
-                print("Error! Invalid monitor.")
+                print(_("Error! Invalid monitor."))
         elif monitor_name in self.unmonitored_list:
-            print("".join(["The signal ", monitor_name, " is now being monitored"]))
+            print("".join([_("The signal "), monitor_name, _(" is now being monitored")]))
             code = self.monitors.make_monitor(device, port, self.cycles_completed)
             if code == self.monitors.NO_ERROR:
-                print("Monitor added successfully.")
+                print(_("Monitor added successfully."))
                 # Remove the monitor from the unmonitored list
                 # and add it to the monitored list
                 self.unmonitored_list.remove(monitor_name)
                 self.monitored_list.append(monitor_name)
                 self.canvas.on_paint(0)
             elif code == self.monitors.NOT_OUTPUT:
-                print("Error! Invalid monitor output.")
+                print(_("Error! Invalid monitor output."))
             elif code == self.network.DEVICE_ABSENT:
-                print("Error! Can't find the device to monitor.")
+                print(_("Error! Can't find the device to monitor."))
             elif code == self.monitors.MONITOR_PRESENT:
-                print("Error! This signal is already monitored.")
+                print(_("Error! This signal is already monitored."))
         else:
             print(
-                """Something has gone wrong: the monitor list doesn't seem to
-                be reading correctly."""
+                _("""Something has gone wrong: the monitor list doesn't seem to
+                be reading correctly.""")
             )  # This really shouldn't ever happen
 
     def on_conbox(self, event):
@@ -978,15 +991,15 @@ class Gui(wx.Frame):
                 "".join(
                     [
                         input_name,
-                        " now connected to ",
+                       _( " now connected to "),
                         new_output_name,
-                        ", not ",
+                        _(", not "),
                         old_output_name,
                     ]
                 )
             )
         else:
-            print("One or more inputs in the network are missing a connection")
+            print(_("One or more inputs in the network are missing a connection"))
             # Again this shouldn't happen with this method, might remove these later
 
     def on_canvas_reset(self, event):
@@ -1040,9 +1053,9 @@ class Gui(wx.Frame):
             elif command == "q":
                 self.Close(True)
             else:
-                print("Invalid command. Enter 'h' for help.")
+                print(_("Invalid command. Enter 'h' for help."))
         except AttributeError:
-            print("This function has not been implemented yet. Enter 'h' for help.")
+            print(_("This function has not been implemented yet. Enter 'h' for help."))
             pass
 
         # Reset text_input to be empty
@@ -1073,7 +1086,7 @@ class Gui(wx.Frame):
         self.skip_spaces()
         name_string = ""
         if not self.character.isalpha():  # the string must start with a letter
-            print("Error! Expected a name.")
+            print(_("Error! Expected a name."))
             return None
         while self.character.isalnum():
             name_string = "".join([name_string, self.character])
@@ -1091,7 +1104,7 @@ class Gui(wx.Frame):
         else:
             name_id = self.names.query(name_string)
         if name_id is None:
-            print("Error! Unknown name.")
+            print(_("Error! Unknown name."))
         return name_id
 
     def read_signal_name(self):
@@ -1119,7 +1132,7 @@ class Gui(wx.Frame):
         self.skip_spaces()
         number_string = ""
         if not self.character.isdigit():
-            print("Error! Expected a number.")
+            print(_("Error! Expected a number."))
             return None
         while self.character.isdigit():
             number_string = "".join([number_string, self.character])
@@ -1128,28 +1141,28 @@ class Gui(wx.Frame):
 
         if upper_bound is not None:
             if number > upper_bound:
-                print("Number out of range.")
+                print(_("Number out of range."))
                 return None
 
         if lower_bound is not None:
             if number < lower_bound:
-                print("Number out of range.")
+                print(_("Number out of range."))
                 return None
 
         return number
 
     def help_command(self):
         """Print a list of valid commands."""
-        print("User commands:")
-        print("r N       - run the simulation for N cycles")
-        print("c N       - continue the simulation for N cycles")
-        print("s X N     - set switch X to N (0 or 1)")
-        print("m X       - set a monitor on signal X")
-        print("z X       - zap the monitor on signal X")
+        print(_("User commands:"))
+        print(_("r N       - run the simulation for N cycles"))
+        print(_("c N       - continue the simulation for N cycles"))
+        print(_("s X N     - set switch X to N (0 or 1)"))
+        print(_("m X       - set a monitor on signal X"))
+        print(_("z X       - zap the monitor on signal X"))
         # print("l X Y     - connect output X to input Y")
         # print("x X Y     - discconnect output X from input Y")
-        print("h         - help (this command)")
-        print("q         - quit the program")
+        print(_("h         - help (this command)"))
+        print(_("q         - quit the program"))
 
     def switch_command(self, level="Read text"):
         """Set the specified switch to the specified signal level."""
@@ -1160,13 +1173,13 @@ class Gui(wx.Frame):
                 switch_name = self.read_portname()
                 switch_index = self.switch_list_names.index(switch_name)
                 if self.devices.set_switch(switch_id, switch_state):
-                    print("Successfully set switch.")
+                    print(_("Successfully set switch."))
                     if switch_state == 1:
                         self.switch_toggles.Check(switch_index, True)
                     elif switch_state == 0:
                         self.switch_toggles.Check(switch_index, False)
                 else:
-                    print("Error! Invalid switch.")
+                    print(_("Error! Invalid switch."))
 
     def monitor_command(self):
         """Set the specified monitor."""
@@ -1177,7 +1190,7 @@ class Gui(wx.Frame):
                 device, port, self.cycles_completed
             )
             if monitor_error == self.monitors.NO_ERROR:
-                print("Successfully made monitor.")
+                print(_("Successfully made monitor."))
                 self.canvas.on_paint(0)
 
                 # This is not very clean but it should work
@@ -1188,7 +1201,7 @@ class Gui(wx.Frame):
                 self.unmonitored_list.remove(monitor_name)
                 self.monitored_list.append(monitor_name)
             else:
-                print("Error! Could not make monitor.")
+                print(_("Error! Could not make monitor."))
 
     def read_portname(self):
         """Reads the string name of the port entered"""
@@ -1213,7 +1226,7 @@ class Gui(wx.Frame):
         if monitor is not None:
             [device, port] = monitor
             if self.monitors.remove_monitor(device, port):
-                print("Successfully zapped monitor")
+                print(_("Successfully zapped monitor"))
                 self.canvas.on_paint(0)
 
                 # This is not very clean but it should work
@@ -1224,7 +1237,7 @@ class Gui(wx.Frame):
                 self.monitored_list.remove(monitor_name)
                 self.unmonitored_list.append(monitor_name)
             else:
-                print("Error! Could not zap monitor.")
+                print(_("Error! Could not zap monitor."))
 
     def run_network(self, cycles):
         """Run the network for the specified number of simulation cycles.
@@ -1235,7 +1248,7 @@ class Gui(wx.Frame):
             if self.network.execute_network():
                 self.monitors.record_signals()
             else:
-                print("Error! Network oscillating.")
+                print(_("Error! Network oscillating."))
                 return False
         self.monitors.display_signals()
         return True
@@ -1246,11 +1259,11 @@ class Gui(wx.Frame):
         if cycles == "Read text":
             cycles = self.read_number(0, None)
         elif type(cycles) != int or cycles <= 0:
-            print("Invalid number of cycles (must be integer). Enter 'h' for help.")
+            print(_("Invalid number of cycles (must be integer). Enter 'h' for help."))
             cycles = None  # Will stop the run_command here
         if cycles is not None:  # if the number of cycles provided is valid
             self.monitors.reset_monitors()
-            print("".join(["Running for ", str(cycles), " cycles"]))
+            print("".join([_("Running for "), str(cycles), _(" cycles")]))
             self.devices.cold_startup()
             if self.run_network(cycles):
                 self.cycles_completed += cycles
@@ -1262,20 +1275,20 @@ class Gui(wx.Frame):
         if cycles == "Read text":
             cycles = self.read_number(0, None)
         elif not isinstance(cycles, int) or cycles <= 0:
-            print("Invalid number of cycles (must be integer). Enter 'h' for help.")
+            print(_("Invalid number of cycles (must be integer). Enter 'h' for help."))
             cycles = None  # Will stop the continue_command here
         if cycles is not None:  # if the number of cycles provided is valid
             if self.cycles_completed == 0:
-                print("Error! Nothing to continue. Run first.")
+                print(_("Error! Nothing to continue. Run first."))
             elif self.run_network(cycles):
                 self.cycles_completed += cycles
                 print(
                     " ".join(
                         [
-                            "Continuing for",
+                            _("Continuing for"),
                             str(cycles),
-                            "cycles.",
-                            "Total:",
+                           _("cycles."),
+                            _("Total:"),
                             str(self.cycles_completed),
                         ]
                     )
@@ -1304,24 +1317,24 @@ class Gui(wx.Frame):
             start_device, start_port, end_device, end_port
         )
         if error == self.network.NO_ERROR:
-            print("Connection successfully made")
+            print(_("Connection successfully made"))
         elif error == self.network.DEVICE_ABSENT:
-            print("ERROR: Device not found")
+            print(_("ERROR: Device not found"))
         elif error == self.network.INPUT_CONNECTED:
-            print("ERROR: Input already connected to another port")
+            print(_("ERROR: Input already connected to another port"))
         elif error == self.network.INPUT_TO_INPUT:
-            print("ERROR: Inputs can't be connected to other inputs")
+            print(_("ERROR: Inputs can't be connected to other inputs"))
         elif error == self.network.PORT_ABSENT:
-            print("ERROR: Not a valid input or output port")
+            print(_("ERROR: Not a valid input or output port"))
         elif error == self.network.OUTPUT_TO_OUTPUT:
-            print("ERROR: Outputs can't be connected to other outputs")
+            print(_("ERROR: Outputs can't be connected to other outputs"))
         elif error == self.network.NO_CONNECTION:
-            print("ERROR: Those ports weren't connected")
+            print(_("ERROR: Those ports weren't connected"))
         # Check circuit for completeness
         if self.network.check_network():
-            print("Network is complete and ready to run.")
+            print(_("Network is complete and ready to run."))
         else:
-            print("One or more inputs in the network are missing a connection.")
+            print(_("One or more inputs in the network are missing a connection."))
 
     def disconnect_command(self, start="Read text", end="Read text"):
         """Cut a connection between an output and input"""
@@ -1340,23 +1353,23 @@ class Gui(wx.Frame):
             end_device, end_port, start_device, start_port
         )
         if error == self.network.NO_ERROR:
-            print("Connection successfully cut")
+            print(_("Connection successfully cut"))
         elif error == self.network.DEVICE_ABSENT:
-            print("ERROR: Device not found")
+            print(_("ERROR: Device not found"))
         elif error == self.network.INPUT_CONNECTED:
-            print("ERROR: Input already connected to another port")
+            print(_("ERROR: Input already connected to another port"))
         elif error == self.network.INPUT_TO_INPUT:
-            print("ERROR: Inputs can't be connected to other inputs")
+            print(_("ERROR: Inputs can't be connected to other inputs"))
         elif error == self.network.PORT_ABSENT:
-            print("ERROR: Not a valid input or output port")
+            print(_("ERROR: Not a valid input or output port"))
         elif error == self.network.OUTPUT_TO_OUTPUT:
-            print("ERROR: Outputs can't be connected to other outputs")
+            print(_("ERROR: Outputs can't be connected to other outputs"))
         elif error == self.network.NO_CONNECTION:
-            print("ERROR: Those ports weren't connected")
+            print(_("ERROR: Those ports weren't connected"))
         if start == "Read text":
             print(
-                """Network is incomplete, please connect something to the
-                disconnected input before running."""
+                _("""Network is incomplete, please connect something to the
+                disconnected input before running.""")
             )
 
 
@@ -1372,7 +1385,7 @@ class MonitorSetDialog(wx.Dialog):
         self.Gui = Gui
         self.InitUI()
         self.Fit()
-        self.SetTitle("Change Monitor Trace Settings")
+        self.SetTitle(_("Change Monitor Trace Settings"))
 
     def InitUI(self):
 
@@ -1381,14 +1394,14 @@ class MonitorSetDialog(wx.Dialog):
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Monitor trace height"))
+        main_sizer.Add(wx.StaticText(panel, wx.ID_ANY, _("Monitor trace height")))
         self.mheight_spin = wx.SpinCtrl(
             panel, wx.ID_ANY, initial=self.monitorheight, min=1
         )
         main_sizer.Add(self.mheight_spin)
         main_sizer.Add(
             wx.StaticText(
-                panel, wx.ID_ANY, "Monitor trace time step horizontal spacing"
+                panel, wx.ID_ANY, _("Monitor trace time step horizontal spacing")
             )
         )
         self.mstep_spin = wx.SpinCtrl(
@@ -1396,7 +1409,7 @@ class MonitorSetDialog(wx.Dialog):
         )
         main_sizer.Add(self.mstep_spin)
         main_sizer.Add(
-            wx.StaticText(panel, wx.ID_ANY, "Vertical spacing between traces")
+            wx.StaticText(panel, wx.ID_ANY, _("Vertical spacing between traces"))
         )
         self.mspace_spin = wx.SpinCtrl(
             panel, wx.ID_ANY, initial=self.monitorspacing, min=1
@@ -1406,8 +1419,8 @@ class MonitorSetDialog(wx.Dialog):
         panel.SetSizer(main_sizer)
 
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        okButton = wx.Button(self, label="Apply")
-        closeButton = wx.Button(self, label="Close")
+        okButton = wx.Button(self, label=_("Apply"))
+        closeButton = wx.Button(self, label=_("Close"))
         button_sizer.Add(okButton)
         button_sizer.Add(closeButton)
 
@@ -1425,8 +1438,36 @@ class MonitorSetDialog(wx.Dialog):
         self.Gui.canvas.monitorspacing = self.mspace_spin.GetValue()
         self.Gui.canvas.monitorstep = self.mstep_spin.GetValue()
         self.Gui.canvas.on_paint(0)
-        print("Updated settings")
+        print(_("Updated settings"))
 
     def OnClose(self, e):
 
         self.Destroy()
+
+
+class LanguageToggle(wx.App, InspectionMixin):
+
+    def OnInit(self):
+
+        self.Init()
+
+        language = wx.Locale.GetSystemLanguage()
+
+        if language in languages:
+            wx_lang = language
+        else:
+            wx_lang = wx.LANGUAGE_ENGLISH
+        wx_lang = 94
+        #create locale
+        self.locale = wx.Locale(wx_lang)
+        if self.locale.IsOk():
+            basepath = os.path.abspath(os.path.dirname(sys.argv[0]))
+            #sys.path.append(base_path)
+            localedir = os.path.join(basepath, "locale")
+            domain = "messages_gr"
+            self.locale.AddCatalogLookupPathPrefix(localedir)
+            self.locale.AddCatalog(domain)
+        else:
+            self.locale = None
+
+        return True
