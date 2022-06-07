@@ -34,3 +34,7 @@ that a strict line length limit would overly constrain the string formatting.
 
 For classes, the class documentation lists the class and instance variables. Methods 
 are then documented in the docstrings for the methods themselves.
+
+Our general approach to docstrings is that information is included exactly once. For 
+example, classes are not listed at the top of a file, as this is redundant and may 
+conflict with information elsewhere in the file.
