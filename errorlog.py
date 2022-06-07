@@ -18,7 +18,7 @@ class CustomException(BaseException):
 
     Attributes
     ----------
-    error_line: the line number of the Symbol that caused the error within the input 
+    error_line: the line number of the Symbol that caused the error within the input
         text file.
     error_column: the index of the Symbol within a line.
     """
@@ -69,8 +69,8 @@ class NameSyntaxError(CustomException):
 
 class DeviceReferenceError(CustomException):
     """Raised when a device is referenced without being properly defined.
-    
-    This uses the Devices.device_list, and so may be raised if a device is defined in 
+
+    This uses the Devices.device_list, and so may be raised if a device is defined in
     the file but not created due to other errors.
     """
 
@@ -89,7 +89,7 @@ class MultipleConnectionError(CustomException):
 
 class OutOfBoundsError(CustomException):
     """Raised when a numerical value is outside the valid range.
-    
+
     Used in gate devices, where the number of inputs is in the range [0, 16]
     """
 
@@ -116,7 +116,7 @@ class ErrorLog:
 
     def error_counts(self) -> Dict[str, int]:
         """Return a dictionary with the type and frequency of errors.
-        
+
         Mainly useful for testing to ensure the correct errors are raised.
         """
         counts = {}
@@ -127,7 +127,7 @@ class ErrorLog:
 
     def contains_error(self, error_type: CustomException) -> bool:
         """Return True if the error of the given type has been raised.
-        
+
         Parameters
         ----------
         error_type: the type of the error that is being checked.

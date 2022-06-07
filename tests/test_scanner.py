@@ -1,7 +1,8 @@
 """Test the scanner module."""
 
-import pytest
 import string
+
+import pytest
 
 from names import Names
 from scanner import Scanner
@@ -63,7 +64,12 @@ def test_scanner_get_number(file_contents, expected_numbers, tmpdir, names):
     assert scanner._get_number() == expected_numbers
 
 
-symbol_test_files = [("DEVICE", 5, 0), ("MONITOR", 5, 2), ("CLK1:", 7, 4), (";", 1, None)]
+symbol_test_files = [
+    ("DEVICE", 5, 0),
+    ("MONITOR", 5, 2),
+    ("CLK1:", 7, 4),
+    (";", 1, None),
+]
 
 
 @pytest.mark.parametrize("file_contents, expected_type, expected_id", symbol_test_files)

@@ -1,7 +1,8 @@
 """Test the names module."""
 
-from names import Names
 import pytest
+
+from names import Names
 
 
 @pytest.fixture
@@ -38,26 +39,22 @@ def errors_added(names_added, initial_errors):
 
 
 def test_unique_errors_raises_error(names_added):
-    """Test to check that unique_error_code raises a TypeError 
+    """Test to check that unique_error_code raises a TypeError
     upon input a non-integer argument"""
-    
+
     with pytest.raises(TypeError):
         names_added.unique_error_codes("some str")
     with pytest.raises(TypeError):
         names_added.unique_error_codes(1.4)
 
-    
-@pytest.mark.parametrize(
-    "errors, expected", [(4, range(0, 4)), (5, range(0, 5))]
-)
+
+@pytest.mark.parametrize("errors, expected", [(4, range(0, 4)), (5, range(0, 5))])
 def test_error_count(names_added, errors, expected):
     """Assert that errors are correctly counted."""
     assert names_added.unique_error_codes(errors) == expected
 
 
-@pytest.mark.parametrize(
-    "new_errors, expected", [(4, range(3, 7)), (5, range(3, 8))]
-)
+@pytest.mark.parametrize("new_errors, expected", [(4, range(3, 7)), (5, range(3, 8))])
 def test_added_error_count(errors_added, new_errors, expected):
     """Test that the errors add correctly."""
     assert errors_added.unique_error_codes(new_errors) == expected
@@ -82,13 +79,11 @@ def test_query(names_added, n, name, expected_id):
 
 
 @pytest.mark.parametrize(
-    "names_list, expected_ids", 
-    [
-     (["Toby", "TikTok", "Ieronymos", "Amber"], 
-      [0, 3, 2, 5])]
-    )
+    "names_list, expected_ids",
+    [(["Toby", "TikTok", "Ieronymos", "Amber"], [0, 3, 2, 5])],
+)
 def test_lookup(names_added, names_list, expected_ids):
-    """Input: list containing string names --> Output: list of unique ids. 
+    """Input: list containing string names --> Output: list of unique ids.
     Amber is now assigned an id"""
     assert names_added.lookup(names_list) == expected_ids
 

@@ -5,7 +5,7 @@ correctness of the symbols received from the scanner and then builds the
 logic network.
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import errorlog
 from devices import Devices

@@ -26,9 +26,9 @@ Pre-commits have been used to ensure that, as code is being commited to the main
 branch, it is being automatically formatted.
 
 The *Black* line length is set to 88 characters. In some cases, line length was 
-exceeded, as breaking a string into multiple lines did not increase readability. This 
-is especially true in `parse.py`, where the conditional logic is highly nested such 
-that a strict line length limit would overly constrain the string formatting.
+exceeded, as breaking a line into multiple lines does not always increase readability. 
+This is especially true in `parse.py`, where the conditional logic is highly nested 
+such that a strict line length limit would overly constrain the string formatting.
 
 ### Documentation
 

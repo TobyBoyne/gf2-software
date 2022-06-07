@@ -131,7 +131,7 @@ class Devices:
             self.NAND,
             self.NOR,
             self.XOR,
-            self.NOT
+            self.NOT,
         ] = self.names.lookup(gate_strings)
         self.device_types = [
             self.CLOCK,
@@ -296,13 +296,9 @@ class Devices:
 
             elif device.device_kind == self.CLOCK:
                 clock_signal = random.choice([self.LOW, self.HIGH])
-                self.add_output(
-                    device.device_id, output_id=None, signal=clock_signal
-                )
+                self.add_output(device.device_id, output_id=None, signal=clock_signal)
                 # Initialise it to a random point in its cycle.
-                device.clock_counter = random.randrange(
-                    device.clock_half_period
-                )
+                device.clock_counter = random.randrange(device.clock_half_period)
 
     def make_device(self, device_id, device_kind, device_property=None):
         """Create the specified device.

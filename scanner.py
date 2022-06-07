@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 
 class Symbol:
     """Encapsulate a symbol and store its properties.
-    
+
     Attributes
     ----------
     type: the type of the symbol, as listed in Scanner.SYMBOL_TYPES_LIST.
-    id: the id of the symbol - either a numerical value (for Scanner.NUMBER), or the 
+    id: the id of the symbol - either a numerical value (for Scanner.NUMBER), or the
         id of the Symbol in the Names object.
     cursor_line: the line number of the Symbol within the input text file.
     cursor_column: the index of the Symbol within a line.
