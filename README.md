@@ -29,3 +29,8 @@ The *Black* line length is set to 88 characters. In some cases, line length was
 exceeded, as breaking a string into multiple lines did not increase readability. This 
 is especially true in `parse.py`, where the conditional logic is highly nested such 
 that a strict line length limit would overly constrain the string formatting.
+
+### Documentation
+
+For classes, the class documentation lists the class and instance variables. Methods 
+are then documented in the docstrings for the methods themselves.

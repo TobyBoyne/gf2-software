@@ -47,8 +47,8 @@ def test_scanner_get_names(file_contents, expected_name, tmpdir, names):
     """Test if the scanner reads the alphanumeric strings correctly."""
     path = new_file(tmpdir, file_contents)
     scanner = Scanner(path, names)
-    scanner.get_next_non_whitespace()
-    assert scanner.get_name() == expected_name
+    scanner._get_next_non_whitespace()
+    assert scanner._get_name() == expected_name
 
 
 number_test_files = [("2 INPUTS", 2), ("10,", 10)]
@@ -59,8 +59,8 @@ def test_scanner_get_number(file_contents, expected_numbers, tmpdir, names):
     """Test if the scanner reads the number strings correctly."""
     path = new_file(tmpdir, file_contents)
     scanner = Scanner(path, names)
-    scanner.get_next_non_whitespace()
-    assert scanner.get_number() == expected_numbers
+    scanner._get_next_non_whitespace()
+    assert scanner._get_number() == expected_numbers
 
 
 symbol_test_files = [("DEVICE", 5, 0), ("MONITOR", 5, 2), ("CLK1:", 7, 4), (";", 1, None)]
