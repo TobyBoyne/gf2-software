@@ -2,18 +2,23 @@
 
 This file contains the grammar rules for the parser
 ```
-deviceList = "DEVICE", device , { "," , device } , ";" ;
+circuitDefinition = deviceList , connectList , monitorList ;
+comment = "/" , { character } , "/" ;
+
+deviceList = "DEVICE", device , { "," , { comment } , device } , ";" , { comment };
 device = gate | switch | clock ;
-deviceName = letter, { letter | digit } ;
+deviceName = letter , { letter | digit } ;
 switch = deviceName , ":" , "SWITCH" , ( 0 | 1 ) ;
 clock = deviceName , ":" , "CLOCK" , digit , { digit } ;
-gate = deviceName, ":" , operator , [ digit , { digit }, "INPUTS" ] ;  
-operator = "AND" | "OR" | "NAND" | "NOR" | "DTYPE" | "XOR";
+gate = deviceName , ":" , operator , [ digit , { digit }, "INPUTS" ]
+operator = "AND" | "OR" | "NAND" | "NOR" | "DTYPE" | "XOR" | "NOT" ;
 
-connectList = "CONNECT" , connection , { "," , connection } , ";" ;
+connectList = "CONNECT" , connection , { "," , { comment } , connection } , ";" , { comment }
+;
 connection = output , "->" , input ;
-input = deviceName , ".I" , { digit } ;
+input = deviceName , "." , ( "I" , { digit } | dtypeInput ) ;
+dtypeInput = "DATA" | "CLK" | "SET" | "CLEAR" ;
 output = deviceName , [ "." , ( "Q" | "QBAR" ) ] ;
 
-monitorList = "MONITOR" , output , { "," , output } , ";" ;
+monitorList = "MONITOR" , output , { "," , { comment } , output } , ";" , { comment } ;
 ```
