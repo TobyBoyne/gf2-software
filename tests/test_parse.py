@@ -31,10 +31,68 @@ def parser(tmpdir, request):
     return Parser(names, devices, network, monitors, scanner)
 
 
+# --- TEST WORKING PARSER ---
+
+
 @pytest.mark.parametrize("parser", ["filecontents"], indirect=True)
 def test_parser_creation(parser):
     """Create a parser object using fixtures"""
     assert isinstance(parser, Parser)
+
+
+noerrors_files = [
+    """
+DEVICE  G1: AND 2 INPUTS, G2: AND 2 INPUTS, G3: NOR 2 INPUTS, G4: NOR 2 INPUTS,
+    SW1: SWITCH 0, / S / SW2: SWITCH 1, / R / CLK1: CLOCK 10;
+
+CONNECT SW1 -> G1.I1, SW2 -> G2.I2, CLK1 -> G1.I2, CLK1 -> G2.I1, G1 -> G3.I1,
+    G2 -> G4.I2, G3 -> G4.I1, G4 -> G3.I2;
+
+MONITOR G3, / Q / G4; / Qbar /
+""",
+    """
+DEVICE  SW1: SWITCH 0, SW2: SWITCH 1, CLK: CLOCK 5, NAND: NAND 2 INPUTS, 
+    OR: OR 2 INPUTS, NOR: NOR 2 INPUTS;
+
+CONNECT SW1 -> NAND.I1, CLK -> NAND.I2, CLK -> OR.I1, SW2 -> OR.I2, NAND -> NOR.I1,
+        OR -> NOR.I2;
+
+MONITOR CLK, NOR;
+""",
+]
+
+noerrors_device_names = [
+    ["G1", "G2", "G3", "G4", "SW1", "SW2", "CLK1"],
+    ["SW1", "SW2", "CLK", "NAND", "OR", "NOR"],
+]
+
+noerrors_monitor_names = [
+    ["G3", "G4"],
+    ["CLK", "NOR"],
+]
+
+
+@pytest.mark.parametrize(
+    "parser,device_names,monitor_names",
+    zip(noerrors_files, noerrors_device_names, noerrors_monitor_names),
+    indirect=("parser",),
+)
+def test_correct_parsing(parser: Parser, device_names, monitor_names):
+    parser.parse_network()
+    assert parser.errorlog.no_errors()
+
+    # Test device creation
+    parsed_device_names = list(
+        map(parser.names.get_name_string, parser.devices.find_devices())
+    )
+    assert parsed_device_names == device_names
+
+    # Test network creation
+    assert parser.network.check_network()
+
+    # Test monitors creation
+    parsed_monitors = parser.monitors.get_signal_names()[0]
+    assert parsed_monitors == monitor_names
 
 
 # --- SEMANTIC ERRORS ---
@@ -45,7 +103,6 @@ def test_parser_creation(parser):
 )
 def test_raises_device_reference_error(parser):
     parser.parse_network()
-    print("abc", parser.errorlog.error_counts())
     assert parser.errorlog.contains_error(errorlog.DeviceReferenceError)
 
 
@@ -54,8 +111,6 @@ def test_raises_device_reference_error(parser):
 )
 def test_raises_port_reference_error(parser):
     parser.parse_network()
-    print("jkl", parser.errorlog.error_counts())
-
     assert parser.errorlog.contains_error(errorlog.PortReferenceError)
 
 
@@ -65,15 +120,16 @@ def test_raises_port_reference_error(parser):
 def test_raises_protected_keyword_error(parser):
 
     """Test if the parser correctly raises a ProtectedKeywordError."""
-    parser.next_symbol()
+    parser._next_symbol()
     with pytest.raises(errorlog.ProtectedKeywordError):
-        parser.devicename()
+        parser._devicename()
 
 
 @pytest.mark.parametrize(
     "parser",
     [
-        "DEVICE G1: XOR, SW1: SWITCH 0, SW2: SWITCH 0; CONNECT SW1 -> G1.I1, SW2 -> G1.I1;"
+        "DEVICE G1: XOR, SW1: SWITCH 0, SW2: SWITCH 0; \
+        CONNECT SW1 -> G1.I1, SW2 -> G1.I1;"
     ],
     indirect=True,
 )
@@ -106,9 +162,9 @@ def test_parse_network_raises_names_syntax_error(parser):
 def test_parse_devicename_raises_name_syntax_error(parser):
     """Test if the parser correctly raises a NameSyntaxError.
     Error occurs when a name does not start at a letter"""
-    parser.next_symbol()
+    parser._next_symbol()
     with pytest.raises(errorlog.NameSyntaxError):
-        parser.devicename()
+        parser._devicename()
 
 
 define_devices = "DEVICE G1: AND 4 INPUTS, G2: XOR;"
@@ -133,8 +189,8 @@ def test_parse_network_raises_punctuation_error(parser):
 def test_parse_device_raises_device_definition_error(parser):
     """Test if the parser correctly raises a DeviceDefinitionError.
     Occurs when a switch or clock is not followed by an appropriate number."""
-    parser.next_symbol()
-    parser.device()
+    parser._next_symbol()
+    parser._device()
     assert parser.errorlog.contains_error(errorlog.DeviceDefinitionError)
 
 
@@ -144,6 +200,6 @@ def test_parse_device_raises_device_definition_error(parser):
 def test_parse_devicelist_raises_missing_keyword_error(parser):
     """Test if the parser correctly raises a MissingKeywordError.
     Occurs when the DEVICE Keyword does not precede the device list."""
-    parser.next_symbol()
-    parser.devicelist()
+    parser._next_symbol()
+    parser._devicelist()
     assert parser.errorlog.contains_error(errorlog.MissingKeywordError)
