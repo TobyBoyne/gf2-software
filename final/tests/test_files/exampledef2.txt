@@ -1,0 +1,17 @@
+DEVICE SW1: SWITCH 0,
+       SW2: SWITCH 0,
+       G1: XOR,
+       SW3: SWITCH 0,
+       SW4: SWITCH 0,
+       CLK: CLOCK 2,
+       G2: DTYPE;
+
+CONNECT SW1 -> G1.I1,
+        SW2 -> G1.I2,
+        SW3 -> G2.SET,
+        SW4 -> G2.CLEAR,
+        G1-> G2.DATA,
+        CLK -> G2.CLK;
+
+MONITOR G1,
+        G2.QBAR;

@@ -1,0 +1,17 @@
+DEVICE  SWITCHEROO1:SWITCH 0,
+        OTHER2:SWITCH 0,
+        EITHER: XOR, 
+        TickTock:CLOCK 2, 
+        FANCYNOT:DTYPE,
+        S : SWITCH 0,
+        R : SWITCH 0;
+        
+CONNECT SWITCHEROO1->EITHER.I1,
+        OTHER2 -> EITHER.I2,
+        S -> FANCYNOT.SET,
+        R -> FANCYNOT.CLEAR,
+        EITHER -> FANCYNOT.DATA,  
+        TickTock -> FANCYNOT.CLK;
+
+MONITOR EITHER, 
+        FANCYNOT.QBAR;

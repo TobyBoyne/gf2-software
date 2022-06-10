@@ -1,0 +1,12 @@
+wxpython
+pyopengl
+
+pytest
+pydocstyle
+pycodestyle
+
+numpy
+matplotlib
+pillow
+
+pre-commit

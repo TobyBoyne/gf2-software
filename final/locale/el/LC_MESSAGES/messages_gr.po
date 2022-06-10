@@ -1,0 +1,462 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-06-07 10:56+0100\n"
+"PO-Revision-Date: 2022-06-07 18:20+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: gui.py:162
+msgid "Monitor traces will appear after the circuit is run"
+msgstr "Τα ίχνη παρακολούθησης θα εμφανιστούν μετά την εκτέλεση του κυκλώματος"
+
+#: gui.py:496
+msgid "&?   About"
+msgstr "&?   Σχετικά με"
+
+#: gui.py:497
+msgid "&📁 Open File\tCtrl+O"
+msgstr "&📁 Άνοιγμα αρχείου\tCtrl+O"
+
+#: gui.py:498
+msgid "&🔃 Reload File\tCtrl+R"
+msgstr "&🔃 Επαναφόρτωση αρχείου\tCtrl+R"
+
+#: gui.py:499
+msgid "&…  Show Description\tCtrl+D"
+msgstr "&... Περιγραφή\tCtrl+D"
+
+#: gui.py:500
+msgid "&💾 Save Monitor Graphs\tCtrl+S"
+msgstr "&💾 Αποθήκευση γραφημάτων\tCtrl+S"
+
+#: gui.py:501
+msgid "&❌ Exit\tCtrl+Q"
+msgstr "&❌ Έξοδος\tCtrl+Q"
+
+#: gui.py:502
+msgid "&File"
+msgstr "&Αρχείο"
+
+#: gui.py:506
+msgid "&! Commands\tCtrl+Shift+C"
+msgstr "&! Εντολές\tCtrl+Shift+C"
+
+#: gui.py:507
+msgid "&Help"
+msgstr "&Βοήθεια"
+
+#: gui.py:511
+msgid "&◑ Toggle Dark Mode\tCtrl+T"
+msgstr "&◑ Εναλλαγή σκοτεινής λειτουργίας\tCtrl+T"
+
+#: gui.py:512
+msgid "&⎍  Modify Monitor Trace Settings"
+msgstr "&⎍  Τροποποίηση ρυθμίσεων παρακολούθησης"
+
+#: gui.py:513
+msgid "&Settings"
+msgstr "&Ρυθμίσεις"
+
+#: gui.py:528
+msgid "Command Input"
+msgstr "Είσοδος εντολών"
+
+#: gui.py:533
+msgid "Reset Canvas"
+msgstr "Επαναφορά καμβά"
+
+#: gui.py:537
+msgid "Cycles"
+msgstr "Κύκλοι"
+
+#: gui.py:540
+msgid "Run"
+msgstr "Τρέξε"
+
+#: gui.py:542
+msgid "Continue"
+msgstr "Συνέχισε"
+
+#: gui.py:544
+msgid ""
+"Toggle Switches\n"
+"☐=0, ☑=1"
+msgstr ""
+"Εναλλαγή Διακόπτων\n"
+"☐=0, ☑=1"
+
+#: gui.py:560
+msgid "An error occured while loading the switches"
+msgstr "Παρουσιάστηκε σφάλμα κατά τη φόρτωση των διακοπτών"
+
+#: gui.py:577
+msgid "Toggle Switches"
+msgstr "Εναλλαγή Διακοπτών"
+
+#: gui.py:591
+msgid ""
+"Toggle Monitors\n"
+"☐=off, ☑=on"
+msgstr ""
+"Εναλλαγή οθονών\n"
+"☐=off, ☑=on"
+
+#: gui.py:601
+msgid "An error occured while loading the monitors"
+msgstr "Παρουσιάστηκε σφάλμα κατά τη φόρτωση των διακοπτών"
+
+#: gui.py:609
+msgid "Monitor Toggles"
+msgstr "Παρακολούθησε τους διακόπτες"
+
+#: gui.py:616 gui.py:628
+msgid "Connections"
+msgstr "Συνδέσεις"
+
+#: gui.py:742
+msgid "About Logsim"
+msgstr "Σχετικά με το Logsim"
+
+#: gui.py:745
+msgid ""
+"Logic Simulator\n"
+"Created by Mojisola Agboola\n"
+"2017\n"
+"Group 19 - im475 --- tjad2  --- tjb94\n"
+"2022"
+msgstr ""
+"Προσομοίωση Logic\n"
+"Δημιουργήθηκε από τον Mojisola Agboola\n"
+"2017\n"
+"Ομάδα 19 - im475 --- tjad2  --- tjb94\n"
+"2022"
+
+#: gui.py:748
+msgid "Open TXT file"
+msgstr "Άνοιξε ένα αρχείο ΤΧΤ"
+
+#: gui.py:774
+msgid ""
+"Please input the filepath you would like to save the image to\n"
+"                \n"
+"The default extension is .jpg"
+msgstr ""
+"Εισαγάγετε τη διαδρομή αρχείου στην οποία θέλετε να αποθηκεύσετε την εικόνα\n"
+"                \n"
+"Η προεπιλεγμένη επέκταση είναι .jpg"
+
+#: gui.py:774
+msgid "Save Figure"
+msgstr "Αποθήκευσε την εικόνα"
+
+#: gui.py:783
+msgid ""
+"\n\n---------------------\n"
+"Print this in GUI log?"
+msgstr ""
+"\n\n---------------------\n"
+"Τύπωσέ το στο GUI log?"
+
+#: gui.py:785
+msgid "Description File"
+msgstr "Αρχείο Περιγραφής"
+
+#: gui.py:794
+msgid ""
+"User commands:\n"
+"\nr N       - run the simulation for N cycles"
+"\nc N       - continue the simulation for N cycles"
+"\ns X N     - set switch X to N (0 or 1)"
+"\nm X       - set a monitor on signal X"
+"\nz X       - zap the monitor on signal X"
+"\nh         - help (this command)"
+"\nq         - quit the program"
+msgstr ""
+"Εντολές χρήστη:\n"
+"\nr N        - εκτελέστε την προσομοίωση για N κύκλους"
+"\nc N        - συνεχίστε την προσομοίωση για N κύκλους"
+"\ns X N      - ρυθμίστε το διακόπτη X σε N (0 ή 1)"
+"\nm X        - προσθέστε μια παρακολούθηση στο σήμα X"
+"\nz X        - αφαιρέστε την παρακολούθηση στο σήμα X"
+"\nh          - help (η παρών εντολή)"
+"\nq          - τερμάτισε το πρόγραμμα"
+
+#: gui.py:802 gui.py:1156
+msgid "User commands:"
+msgstr "Εντολές χρήστη:"
+
+#: gui.py:797
+msgid "Command Help"
+msgstr "Βοήθεια Εντολών"
+
+#: gui.py:811 gui.py:1389
+msgid "Change Monitor Trace Settings"
+msgstr "Αλλάξτε τις ρυθμίσεις παρακολούθησης"
+
+#: gui.py:885
+msgid "New spin control value: "
+msgstr "Νέα τιμή ελέγχου περιστροφής: "
+
+#: gui.py:889
+msgid "Run button pressed."
+msgstr "Το κουμπί Τρέξε πατήθηκε."
+
+#: gui.py:894
+msgid "Continue button pressed."
+msgstr "Το κουμπί Συνέχισε πατήθηκε."
+
+#: gui.py:909
+msgid " has been changed from "
+msgstr " έχει αλλάξει από "
+
+#: gui.py:911
+msgid " to "
+msgstr " σε "
+
+#: gui.py:917 gui.py:1177
+msgid "Successfully set switch."
+msgstr "Ο διακόπτης ρυθμίστηκε με επιτυχία."
+
+#: gui.py:919 gui.py:1183
+msgid "Error! Invalid switch."
+msgstr "Σφάλμα! Λανθασμένος διακόπτης."
+
+#: gui.py:928 gui.py:939
+msgid "The signal "
+msgstr "Το σήμα "
+
+#: gui.py:928
+msgid " is no longer monitored"
+msgstr " δεν παρακολουθείται πλέον"
+
+#: gui.py:930
+msgid "Monitor removed successfully."
+msgstr "Η παρακολούθηση αφαιρέθηκε με επιτυχία."
+
+#: gui.py:937
+msgid "Error! Invalid monitor."
+msgstr "Σφάλμα! Λανθασμένη παρακολούθηση."
+
+#: gui.py:939
+msgid " is now being monitored"
+msgstr " παρακολουθείται"
+
+#: gui.py:942
+msgid "Monitor added successfully."
+msgstr "Η παρακολούθηση προστέθηκε με επιτυχία."
+
+#: gui.py:949
+msgid "Error! Invalid monitor output."
+msgstr "Σφάλμα! Λανθασμένη έξοδος οθόνης."
+
+#: gui.py:951
+msgid "Error! Can't find the device to monitor."
+msgstr "Λάθος! Δεν είναι δυνατή η εύρεση της συσκευής για παρακολούθηση."
+
+#: gui.py:953
+msgid "Error! This signal is already monitored."
+msgstr "Σφάλμα! Αυτό το σήμα είναι ήδη υπό παρακολούθηση."
+
+#: gui.py:956
+msgid ""
+"Something has gone wrong: the monitor list doesn't seem to\n"
+"                be reading correctly."
+msgstr ""
+"Κάτι πήγε στραβά: Η λίστα παρακολούθησης δεν φαίνεται\n"
+"                να διαβάζει σωστά."
+
+#: gui.py:995
+msgid " now connected to "
+msgstr " ενώθηκε με την συσκευή "
+
+#: gui.py:997
+msgid ", not "
+msgstr ", και διακόπηκε με την "
+
+#: gui.py:1003
+msgid "One or more inputs in the network are missing a connection"
+msgstr "Μία ή περισσότερες εισόδοι στο δίκτυο δεν έχουν σύνδεση"
+
+#: gui.py:1057
+msgid "Invalid command. Enter 'h' for help."
+msgstr "Άκυρη εντολή. Πληκτρολογήστε 'h' για βοήθεια."
+
+#: gui.py:1059
+msgid "This function has not been implemented yet. Enter 'h' for help."
+msgstr "Αυτή η λειτουργία δεν έχει εφαρμοστεί ακόμα. Πληκτρολογήστε 'h' για βοήθεια."
+
+#: gui.py:1090
+msgid "Error! Expected a name."
+msgstr "Σφάλμα! Αναμενόταν ένα όνομα."
+
+#: gui.py:1108
+msgid "Error! Unknown name."
+msgstr "Σφάλμα! Άγνωστο όνομα."
+
+#: gui.py:1136
+msgid "Error! Expected a number."
+msgstr "Σφάλμα! Αναμενόταν ένας αριθμός."
+
+#: gui.py:1145 gui.py:1150
+msgid "Number out of range."
+msgstr "Ο αριθμός είναι εκτός ορίων."
+
+#: gui.py:1158
+msgid "r N       - run the simulation for N cycles"
+msgstr "r N      - εκτελέστε την προσομοίωση για N κύκλους"
+
+#: gui.py:1159
+msgid "c N       - continue the simulation for N cycles"
+msgstr "c N      - συνεχίστε την προσομοίωση για N κύκλους"
+
+#: gui.py:1160
+msgid "s X N     - set switch X to N (0 or 1)"
+msgstr "s X N    - ρυθμίστε το διακόπτη X στο N (0 ή 1)"
+
+#: gui.py:1161
+msgid "m X       - set a monitor on signal X"
+msgstr "m X      - ρυθμίστε μια οθόνη στο σήμα X"
+
+#: gui.py:1162
+msgid "z X       - zap the monitor on signal X"
+msgstr "z X      - αφαιρέστε την παρακολούθηση απο το σήμα X"
+
+#: gui.py:1165
+msgid "h         - help (this command)"
+msgstr "h        - help (αυτή η εντολή)"
+
+#: gui.py:1166
+msgid "q         - quit the program"
+msgstr "q        - τερματίστε το πρόγραμμα"
+
+#: gui.py:1194
+msgid "Successfully made monitor."
+msgstr "Η οθόνη έγινε με επιτυχία."
+
+#: gui.py:1205
+msgid "Error! Could not make monitor."
+msgstr "Σφάλμα! Η οθόνη δεν δημιουργήθηκε."
+
+#: gui.py:1230
+msgid "Successfully zapped monitor"
+msgstr "Η παρακολούθηση αφαιρέθηκε με επιτυχία"
+
+#: gui.py:1241
+msgid "Error! Could not zap monitor."
+msgstr "Σφάλμα! Η παρακολούθηση δεν αφαιρέθηκε."
+
+#: gui.py:1252
+msgid "Error! Network oscillating."
+msgstr "Σφάλμα! Το δίκτυο δεν είναι σταθερό."
+
+#: gui.py:1263 gui.py:1279
+msgid "Invalid number of cycles (must be integer). Enter 'h' for help."
+msgstr "Μη έγκυρος αριθμός κύκλων (πρέπει να είναι ακέραιος). Πληκτρολογήστε 'h' για βοήθεια."
+
+#: gui.py:1267
+msgid "Running for "
+msgstr "Τρέχει για "
+
+#: gui.py:1267
+msgid " cycles"
+msgstr " κύκλους"
+
+#: gui.py:1283
+msgid "Error! Nothing to continue. Run first."
+msgstr "Σφάλμα! Πρώτα Τρέξε το πρόγραμμα πριν συνεχίσετε."
+
+#: gui.py:1289
+msgid "Continuing for"
+msgstr "Συνεχίζει για"
+
+#: gui.py:1291
+msgid "cycles."
+msgstr "κύκλους."
+
+#: gui.py:1292
+msgid "Total:"
+msgstr "Σύνολο:"
+
+#: gui.py:1321
+msgid "Connection successfully made"
+msgstr "Η σύνδεση δημιουργήθηκε με επιτυχία"
+
+#: gui.py:1323 gui.py:1359
+msgid "ERROR: Device not found"
+msgstr "ΣΦΑΛΜΑ: Η συσκευή δεν βρέθηκε"
+
+#: gui.py:1325 gui.py:1361
+msgid "ERROR: Input already connected to another port"
+msgstr "ΣΦΑΛΜΑ: Η είσοδος είναι ήδη συνδεδεμένη σε άλλη θύρα"
+
+#: gui.py:1327 gui.py:1363
+msgid "ERROR: Inputs can't be connected to other inputs"
+msgstr "ΣΦΑΛΜΑ: Οι εισόδοι δεν μπορούν να συνδεθούν με άλλες εισόδους"
+
+#: gui.py:1329 gui.py:1365
+msgid "ERROR: Not a valid input or output port"
+msgstr "ΣΦΑΛΜΑ: Η θύρα εισόδου ή εξόδου δεν είναι έγκυρη"
+
+#: gui.py:1331 gui.py:1367
+msgid "ERROR: Outputs can't be connected to other outputs"
+msgstr "ΣΦΑΛΜΑ: Οι εξόδοι δεν μπορούν να συνδεθούν με άλλες εξόδους"
+
+#: gui.py:1333 gui.py:1369
+msgid "ERROR: Those ports weren't connected"
+msgstr "ΣΦΑΛΜΑ: Οι θύρες δεν έχουν συνδεθεί"
+
+#: gui.py:1336
+msgid "Network is complete and ready to run."
+msgstr "Το δίκτυο είναι πλήρες και έτοιμο για λειτουργία."
+
+#: gui.py:1338
+msgid "One or more inputs in the network are missing a connection."
+msgstr "Μία ή περισσότερες εισόδοι στο δίκτυο δεν έχουν συνδεθεί."
+
+#: gui.py:1357
+msgid "Connection successfully cut"
+msgstr "Η σύνδεση διακόπηκε με επιτυχία"
+
+#: gui.py:1372
+msgid ""
+"Network is incomplete, please connect something to the\n"
+"                disconnected input before running."
+msgstr ""
+"Το δίκτυο δεν είναι ολοκληρωμένο, συνδέστε κάτι στην\n"
+"                αποσυνδεδεμένη είσοδο πριν τρέξει."
+
+#: gui.py:1398
+msgid "Monitor trace height"
+msgstr "Παρακολούθηση ύψους ίχνους"
+
+#: gui.py:1405
+msgid "Monitor trace time step horizontal spacing"
+msgstr "Παρακολούθηση οριζόντιας απόστασης χρόνου"
+
+#: gui.py:1413
+msgid "Vertical spacing between traces"
+msgstr "Κάθετη απόσταση μεταξύ των ιχνών"
+
+#: gui.py:1423
+msgid "Apply"
+msgstr "Εφάρμοσε"
+
+#: gui.py:1424
+msgid "Close"
+msgstr "Κλείσε"
+
+#: gui.py:1442
+msgid "Updated settings"
+msgstr "Ενημέρωση ρυθμίσεις"
