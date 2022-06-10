@@ -27,7 +27,7 @@ class MyLanguageApp(wx.App, InspectionMixin):
         else:
             wx_lang = wx.LANGUAGE_DEFAULT  # English
 
-        # wx_lang = 94  # Uncomment this line to launch the Greek GUI (Windows only (will remove for submission))
+        # wx_lang = 94  # Uncomment this line to launch the Greek GUI manually
 
         # Create locale
         self.locale = wx.Locale(wx_lang)
